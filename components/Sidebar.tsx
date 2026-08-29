@@ -50,9 +50,8 @@ export default function Sidebar({
               </div>
             </div>
             <div>
-              <span className="tracking-wider">MASTER_DASHBOARD</span>
-              <br />
-              <span className="text-[#b9cacb] font-mono text-[10px] tracking-widest uppercase">v1.0.0</span>
+              <span className="tracking-wider">MASTER</span>
+              {/* <span className="text-[#b9cacb] font-mono text-[10px] tracking-widest uppercase">v1.0.0</span> */}
             </div>
           </div>
 
