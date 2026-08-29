@@ -1,26 +1,219 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-on-tertiary-fixed-variant: #92002a;
+  --color-on-primary-fixed-variant: #004f53;
+  --color-on-tertiary-container: #be0d3c;
+  --color-inverse-surface: #e3e1e9;
+  --color-surface-container-highest: #34343a;
+  --color-on-surface: #e3e1e9;
+  --color-on-tertiary-fixed: #40000d;
+  --color-outline-variant: #3a494b;
+  --color-on-primary: #00373a;
+  --color-on-secondary-fixed: #002113;
+  --color-primary-container: #00f2fe;
+  --color-error-container: #93000a;
+  --color-surface: #121318;
+  --color-surface-container: #1e1f25;
+  --color-primary-fixed: #6ff6ff;
+  --color-tertiary-fixed-dim: #ffb2b7;
+  --color-on-secondary-container: #00311f;
+  --color-secondary-fixed: #6ffbbe;
+  --color-on-tertiary: #67001b;
+  --color-on-secondary: #003824;
+  --color-background: #121318;
+  --color-surface-dim: #121318;
+  --color-on-error-container: #ffdad6;
+  --color-inverse-primary: #00696f;
+  --color-tertiary-fixed: #ffdadb;
+  --color-error: #ffb4ab;
+  --color-surface-container-high: #292a2f;
+  --color-on-primary-container: #006a70;
+  --color-inverse-on-surface: #2f3036;
+  --color-on-error: #690005;
+  --color-on-secondary-fixed-variant: #005236;
+  --color-tertiary-container: #ffcfd1;
+  --color-surface-container-lowest: #0d0e13;
+  --color-on-background: #e3e1e9;
+  --color-on-surface-variant: #b9cacb;
+  --color-outline: #849495;
+  --color-tertiary: #fff5f4;
+  --color-on-primary-fixed: #002022;
+  --color-secondary: #4edea3;
+  --color-surface-container-low: #1a1b21;
+  --color-surface-tint: #00dce6;
+  --color-secondary-container: #00a572;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-surface-bright: #38393f;
+  --color-surface-variant: #34343a;
+  --color-primary-fixed-dim: #00dce6;
+  --color-primary: #e0fdff;
+
+  --spacing-unit: 4px;
+  --spacing-gutter: 12px;
+  --spacing-margin: 24px;
+  --spacing-card-padding: 16px;
+  --spacing-container-max-width: 1440px;
+
+  --font-body-default: var(--font-geist-sans), system-ui, sans-serif;
+  --font-headline-md: var(--font-geist-sans), system-ui, sans-serif;
+  --font-display-lg: var(--font-geist-sans), system-ui, sans-serif;
+  --font-code-sm: var(--font-jetbrains-mono), monospace;
+  --font-label-caps: var(--font-jetbrains-mono), monospace;
+  --font-metrics-lg: var(--font-jetbrains-mono), monospace;
+
+  --text-body-default: 14px;
+  --text-body-default--line-height: 20px;
+
+  --text-code-sm: 12px;
+  --text-code-sm--line-height: 16px;
+
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--letter-spacing: -0.01em;
+
+  --text-display-lg: 32px;
+  --text-display-lg--line-height: 40px;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  --text-label-caps: 10px;
+  --text-label-caps--line-height: 12px;
+  --text-label-caps--letter-spacing: 0.1em;
+
+  --text-metrics-lg: 24px;
+  --text-metrics-lg--line-height: 32px;
+  --text-metrics-lg--letter-spacing: -0.04em;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: #090a0f;
+    color: #e3e1e9;
+    font-family: var(--font-body-default);
+    margin: 0;
+    min-height: 100vh;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.bento-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.bento-card:hover {
+  border-color: rgba(0, 242, 254, 0.25);
+  box-shadow: 0 4px 20px -4px rgba(0, 242, 254, 0.08);
+}
+
+.modal-level-2 {
+  background-color: rgba(20, 20, 25, 0.88);
+  backdrop-filter: blur(40px);
+  box-shadow: 0 0 30px rgba(0, 242, 254, 0.18);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+}
+
+.hud-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 0;
+  color: #e3e1e9;
+  transition: all 0.2s ease;
+}
+
+.hud-input:focus {
+  outline: none;
+  border-bottom: 1px solid rgba(0, 242, 254, 1);
+  box-shadow: 0 4px 10px -6px rgba(0, 242, 254, 0.5);
+}
+
+.neon-button {
+  background: transparent;
+  border: 1px solid #00f2fe;
+  color: #00f2fe;
+  transition: all 0.2s ease-in-out;
+}
+
+.neon-button:hover {
+  background: rgba(0, 242, 254, 0.1);
+  box-shadow: inset 0 0 10px rgba(0, 242, 254, 0.2), 0 0 15px rgba(0, 242, 254, 0.25);
+  border-color: #6ff6ff;
+  color: #6ff6ff;
+}
+
+.emerald-button {
+  background: transparent;
+  border: 1px solid rgba(78, 222, 163, 0.6);
+  color: #4edea3;
+  transition: all 0.2s ease-in-out;
+}
+
+.emerald-button:hover {
+  background: rgba(78, 222, 163, 0.12);
+  border-color: #4edea3;
+  box-shadow: inset 0 0 10px rgba(78, 222, 163, 0.2), 0 0 15px rgba(78, 222, 163, 0.25);
+}
+
+.status-ring-pulse {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(78, 222, 163, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0); }
+}
+
+.status-ring-pulse-amber {
+  animation: pulse-ring-amber 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring-amber {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.status-ring-pulse-red {
+  animation: pulse-ring-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring-red {
+  0% { box-shadow: 0 0 0 0 rgba(255, 180, 171, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(255, 180, 171, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 180, 171, 0); }
+}
+
+/* Scrollbars */
+.custom-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 254, 0.3);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

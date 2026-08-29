@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// A registered network service / endpoint
+model Service {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    Category
+  ip          String
+  port        Int
+  protocol    Protocol @default(HTTP)
+  healthcheck String?
+  baseUrl     String?
+  tags        Tag[]
+  isLarge     Boolean  @default(false)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  healthChecks HealthCheck[]
+
+  @@index([category])
+}
+
+// Persisted latency/status sample used for sparklines & history
+model HealthCheck {
+  id        String      @id @default(cuid())
+  serviceId String
+  service   Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status    CheckStatus
+  latencyMs Int?
+  checkedAt DateTime    @default(now())
+
+  @@index([serviceId, checkedAt])
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  services Service[]
+}
+
+enum Category {
+  CORE_INFRASTRUCTURE
+  MICROSERVICE
+  DATABASE
+  FRONTEND
+  API
+  WORKERS
+  FULLSTACK
+}
+
+enum Protocol {
+  HTTP
+  HTTPS
+  TCP
+}
+
+enum CheckStatus {
+  ONLINE
+  OFFLINE
+}
