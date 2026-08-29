@@ -57,7 +57,7 @@ jobs:
     steps:
       - name: Pull and Restart Container
         shell: powershell
-        working-directory: D:/BOM
+        working-directory: D:/master_dashboard
         env:
           APP_VERSION: ${{ needs.build-and-push.outputs.short_sha }}
         run: |
