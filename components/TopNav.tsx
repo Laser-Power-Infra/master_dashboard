@@ -36,7 +36,7 @@ export default function TopNav({
         {/* Brand / Status */}
         <div className="flex items-center gap-3 md:gap-4">
           <span className="font-mono text-[10px] tracking-widest text-[#00dce6] bg-[#e0fdff]/5 px-3 py-1 border border-[#00dce6]/25 rounded-[0.125rem] hidden sm:inline-block">
-            NEXUS_PORT // v1.0.0
+            MASTER_DASHBOARD // v1.0.0
           </span>
 
           <div className="flex items-center gap-2 bg-[#34343a]/50 rounded-full px-3 py-1 border border-[#3a494b]/30">

@@ -46,11 +46,11 @@ export default function Sidebar({
           <div className="text-[20px] font-bold text-[#e0fdff] flex items-center gap-3">
             <div className="w-8 h-8 rounded-[0.125rem] bg-gradient-to-br from-[#00f2fe] via-[#00696f] to-[#121318] p-[1px] shadow-[0_0_12px_rgba(0,242,254,0.3)] flex items-center justify-center">
               <div className="w-full h-full bg-[#121318] rounded-[0.125rem] flex items-center justify-center">
-                <span className="font-mono text-[#00f2fe] font-black text-sm tracking-wider">N</span>
+                <span className="font-mono text-[#00f2fe] font-black text-sm tracking-wider">M</span>
               </div>
             </div>
             <div>
-              <span className="tracking-wider">NEXUS_PORT</span>
+              <span className="tracking-wider">MASTER_DASHBOARD</span>
               <br />
               <span className="text-[#b9cacb] font-mono text-[10px] tracking-widest uppercase">v1.0.0</span>
             </div>
