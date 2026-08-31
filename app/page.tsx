@@ -462,7 +462,7 @@ export default function NexusPortDashboard() {
 
               {activeTab === "settings" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]">NexusPort OS Settings</h2>
+                  <h2 className="text-[24px] font-bold text-[#e0fdff]">Settings</h2>
                   <div className="bento-card p-6 rounded-lg space-y-4 max-w-2xl">
                     <div className="flex items-center justify-between">
                       <div>
@@ -488,7 +488,7 @@ export default function NexusPortDashboard() {
 
               {activeTab === "docs" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]">NexusPort OS Documentation</h2>
+                  <h2 className="text-[24px] font-bold text-[#e0fdff]"> Documentation</h2>
                   <div className="bento-card p-6 rounded-lg space-y-3 font-mono text-[12px] text-[#b9cacb] max-w-3xl">
                     <p className="text-[#e3e1e9] font-bold text-[14px]">Getting started</p>
                     <p>

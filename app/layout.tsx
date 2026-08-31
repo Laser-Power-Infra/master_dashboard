@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXUS_PORT OS - Dashboard",
+  title: "MASTER - DASHBOARD",
   description: "Futuristic Cloud Microservices and Infrastructure Control Center",
 };
 

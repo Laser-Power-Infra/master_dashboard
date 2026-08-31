@@ -8,14 +8,14 @@ services:
 
     container_name: master_dashboard
     ports:
-      - "6666:80"
+      - "7777:7777"
 
     env_file:
       - .env.production
 
     environment:
       NODE_ENV: production
-      PORT: 80
+      PORT: 7777
       HOSTNAME: 0.0.0.0
 
       
