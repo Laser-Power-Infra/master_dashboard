@@ -33,7 +33,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
         />
       </head>
-      <body className="min-h-screen bg-[#090a0f] text-[#e3e1e9] flex flex-col selection:bg-[#00f2fe]/30 selection:text-[#e0fdff]">
+      <body className="min-h-screen bg-[#090a0f] text-[#e3e1e9] flex flex-col selection:bg-primary-container/30 selection:text-primary">
         {children}
       </body>
     </html>

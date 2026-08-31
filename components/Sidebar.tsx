@@ -37,21 +37,21 @@ export default function Sidebar({
 
       {/* SideNavBar */}
       <nav
-        className={`fixed left-0 top-0 h-full w-64 bg-[#0d0e13]/90 backdrop-blur-3xl text-[#e0fdff] border-r border-[#3a494b]/30 z-50 flex flex-col py-6 transition-transform duration-300 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-surface-container-lowest/90 backdrop-blur-3xl text-primary border-r border-outline-variant/30 z-50 flex flex-col py-6 transition-transform duration-300 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* Brand / Logo */}
         <div className="px-3 mb-8 flex items-center justify-between">
-          <div className="text-[20px] font-bold text-[#e0fdff] flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[0.125rem] bg-gradient-to-br from-[#00f2fe] via-[#00696f] to-[#121318] p-[1px] shadow-[0_0_12px_rgba(0,242,254,0.3)] flex items-center justify-center">
-              <div className="w-full h-full bg-[#121318] rounded-[0.125rem] flex items-center justify-center">
-                <span className="font-mono text-[#00f2fe] font-black text-sm tracking-wider">M</span>
+          <div className="text-[20px] font-bold text-primary flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xs bg-linear-to-br from-primary-container via-inverse-primary to-[#121318] p-px shadow-[0_0_12px_rgba(0,242,254,0.3)] flex items-center justify-center">
+              <div className="w-full h-full bg-[#121318] rounded-xs flex items-center justify-center">
+                <span className="font-mono text-primary-container font-black text-sm tracking-wider">M</span>
               </div>
             </div>
             <div>
               <span className="tracking-wider">MASTER</span>
-              {/* <span className="text-[#b9cacb] font-mono text-[10px] tracking-widest uppercase">v1.0.0</span> */}
+              {/* <span className="text-on-surface-variant font-mono text-[10px] tracking-widest uppercase">v1.0.0</span> */}
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export default function Sidebar({
           {isMobileOpen && (
             <button
               onClick={onCloseMobile}
-              className="lg:hidden text-[#b9cacb] hover:text-[#6ff6ff] p-1"
+              className="lg:hidden text-on-surface-variant hover:text-primary-fixed p-1"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
@@ -72,7 +72,7 @@ export default function Sidebar({
             onOpenDeployModal();
             if (onCloseMobile) onCloseMobile();
           }}
-          className="mx-4 mb-6 neon-button font-mono text-[12px] py-2 px-4 rounded-[0.125rem] flex items-center justify-center gap-2 cursor-pointer group"
+          className="mx-4 mb-6 neon-button font-mono text-[12px] py-2 px-4 rounded-xs flex items-center justify-center gap-2 cursor-pointer group"
         >
           <span className="material-symbols-outlined text-[16px] group-hover:rotate-90 transition-transform">add</span>
           <span>+ Deploy</span>
@@ -91,8 +91,8 @@ export default function Sidebar({
                 }}
                 className={`flex items-center gap-3 px-4 py-3 text-left transition-all cursor-pointer ${
                   isActive
-                    ? "bg-[#00f2fe]/10 text-[#00f2fe] border-l-2 border-[#00f2fe] shadow-[inset_0_0_15px_rgba(0,242,254,0.1)] font-medium"
-                    : "text-[#b9cacb] hover:bg-[#34343a]/40 hover:text-[#e3e1e9]"
+                    ? "bg-primary-container/10 text-primary-container border-l-2 border-primary-container shadow-[inset_0_0_15px_rgba(0,242,254,0.1)] font-medium"
+                    : "text-on-surface-variant hover:bg-[#34343a]/40 hover:text-[#e3e1e9]"
                 }`}
               >
                 <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
@@ -103,7 +103,7 @@ export default function Sidebar({
         </div>
 
         {/* Bottom Actions */}
-        <div className="mt-auto flex flex-col gap-1 border-t border-[#3a494b]/30 pt-4">
+        <div className="mt-auto flex flex-col gap-1 border-t border-outline-variant/30 pt-4">
           <button
             onClick={() => {
               setActiveTab("settings");
@@ -111,8 +111,8 @@ export default function Sidebar({
             }}
             className={`flex items-center gap-3 px-4 py-3 text-left transition-all cursor-pointer ${
               activeTab === "settings"
-                ? "bg-[#00f2fe]/10 text-[#00f2fe] border-l-2 border-[#00f2fe]"
-                : "text-[#b9cacb] hover:bg-[#34343a]/40 hover:text-[#e3e1e9]"
+                ? "bg-primary-container/10 text-primary-container border-l-2 border-primary-container"
+                : "text-on-surface-variant hover:bg-[#34343a]/40 hover:text-[#e3e1e9]"
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">settings</span>
@@ -125,8 +125,8 @@ export default function Sidebar({
             }}
             className={`flex items-center gap-3 px-4 py-3 text-left transition-all cursor-pointer ${
               activeTab === "docs"
-                ? "bg-[#00f2fe]/10 text-[#00f2fe] border-l-2 border-[#00f2fe]"
-                : "text-[#b9cacb] hover:bg-[#34343a]/40 hover:text-[#e3e1e9]"
+                ? "bg-primary-container/10 text-primary-container border-l-2 border-primary-container"
+                : "text-on-surface-variant hover:bg-[#34343a]/40 hover:text-[#e3e1e9]"
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">menu_book</span>

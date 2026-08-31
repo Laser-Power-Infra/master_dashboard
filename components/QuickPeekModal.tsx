@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { ServiceItem } from "@/types/service";
-import { deriveDisplayStatus, buildBaseUrl, buildPingUrl } from "@/types/service";
+import { deriveDisplayStatus, buildBaseUrl, buildPingUrl, getCompany } from "@/types/service";
 import { useServiceHealth } from "@/hooks/useServiceHealth";
 
 interface QuickPeekModalProps {
@@ -56,8 +56,8 @@ export default function QuickPeekModal({
     : isWarning
     ? "bg-amber-400 status-ring-pulse-amber"
     : isOffline
-    ? "bg-[#ffb4ab] status-ring-pulse-red"
-    : "bg-[#849495]";
+    ? "bg-error status-ring-pulse-red"
+    : "bg-outline";
 
   const statusLabel = isOffline
     ? "OFFLINE"
@@ -84,29 +84,29 @@ export default function QuickPeekModal({
       />
 
       {/* Modal Container */}
-      <div className="modal-level-2 rounded-xl w-full max-w-5xl mx-auto flex flex-col z-10 relative overflow-hidden max-h-[94vh] border border-[#00f2fe]/30 shadow-[0_0_35px_rgba(0,242,254,0.18)]">
+      <div className="modal-level-2 rounded-xl w-full max-w-5xl mx-auto flex flex-col z-10 relative overflow-hidden max-h-[94vh] border border-primary-container/30 shadow-[0_0_35px_rgba(0,242,254,0.18)]">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-[#3a494b]/30 bg-[#121318]/70">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-outline-variant/30 bg-[#121318]/70">
           <div className="flex items-center gap-3">
             <div className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
             <div>
               <h2 className="text-[18px] font-bold text-[#e3e1e9]">{service.name}</h2>
-              <span className="font-mono text-[11px] text-[#b9cacb] uppercase">
-                {service.category} {`//`} {service.ip}:{service.port} {`//`} {statusLabel}
+              <span className="font-mono text-[11px] text-on-surface-variant uppercase">
+                {getCompany(service) ?? "No Company"} {`//`} {service.ip}:{service.port} {`//`} {statusLabel}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Viewport toggle */}
-            <div className="flex items-center gap-1 bg-[#1e1f25] rounded border border-[#3a494b]/40 p-0.5">
+            <div className="flex items-center gap-1 bg-surface-container rounded border border-outline-variant/40 p-0.5">
               {(Object.keys(VIEWPORTS) as Viewport[]).map((v) => (
                 <button
                   key={v}
                   onClick={() => setViewport(v)}
                   className={`px-2 py-1 rounded font-mono text-[10px] uppercase transition-colors cursor-pointer ${
                     viewport === v
-                      ? "bg-[#00f2fe]/15 text-[#00dce6]"
-                      : "text-[#849495] hover:text-[#b9cacb]"
+                      ? "bg-primary-container/15 text-[#00dce6]"
+                      : "text-outline hover:text-on-surface-variant"
                   }`}
                   title={`${VIEWPORTS[v].label} (${VIEWPORTS[v].width}px)`}
                 >
@@ -116,7 +116,7 @@ export default function QuickPeekModal({
             </div>
             <button
               onClick={onClose}
-              className="text-[#b9cacb] hover:text-[#00dce6] transition-colors p-1"
+              className="text-on-surface-variant hover:text-[#00dce6] transition-colors p-1"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
@@ -128,11 +128,11 @@ export default function QuickPeekModal({
           <div className="p-6 space-y-4">
             {/* Quick Metrics Cards */}
             <div className="grid grid-cols-4 gap-2">
-              <div className="bg-[#1e1f25]/80 p-3 rounded border border-[#3a494b]/30 text-center">
-                <span className="font-mono text-[9px] uppercase text-[#849495] block">Latency</span>
+              <div className="bg-surface-container/80 p-3 rounded border border-outline-variant/30 text-center">
+                <span className="font-mono text-[9px] uppercase text-outline block">Latency</span>
                 <span
                   className={`font-mono text-[14px] font-bold ${
-                    isWarning ? "text-amber-400" : isOffline ? "text-[#ffb4ab]" : "text-[#4edea3]"
+                    isWarning ? "text-amber-400" : isOffline ? "text-error" : "text-[#4edea3]"
                   }`}
                 >
                   {liveService.latency !== null && liveService.latency !== undefined
@@ -140,20 +140,20 @@ export default function QuickPeekModal({
                     : "--"}
                 </span>
               </div>
-              <div className="bg-[#1e1f25]/80 p-3 rounded border border-[#3a494b]/30 text-center">
-                <span className="font-mono text-[9px] uppercase text-[#849495] block">Port</span>
+              <div className="bg-surface-container/80 p-3 rounded border border-outline-variant/30 text-center">
+                <span className="font-mono text-[9px] uppercase text-outline block">Port</span>
                 <span className="font-mono text-[14px] font-bold text-[#00dce6]">
                   {service.port}
                 </span>
               </div>
-              <div className="bg-[#1e1f25]/80 p-3 rounded border border-[#3a494b]/30 text-center">
-                <span className="font-mono text-[9px] uppercase text-[#849495] block">Protocol</span>
+              <div className="bg-surface-container/80 p-3 rounded border border-outline-variant/30 text-center">
+                <span className="font-mono text-[9px] uppercase text-outline block">Protocol</span>
                 <span className="font-mono text-[14px] font-bold text-[#e3e1e9]">
                   {service.protocol || "HTTP"}
                 </span>
               </div>
-              <div className="bg-[#1e1f25]/80 p-3 rounded border border-[#3a494b]/30 text-center">
-                <span className="font-mono text-[9px] uppercase text-[#849495] block">History</span>
+              <div className="bg-surface-container/80 p-3 rounded border border-outline-variant/30 text-center">
+                <span className="font-mono text-[9px] uppercase text-outline block">History</span>
                 <span className="font-mono text-[14px] font-bold text-[#e3e1e9]">
                   {service.history.length}
                 </span>
@@ -165,11 +165,11 @@ export default function QuickPeekModal({
               <span className="font-mono text-[10px] text-[#00dce6] uppercase tracking-wider font-bold block">
                 Network & Routing
               </span>
-              <div className="flex items-center justify-between bg-[#0d0e13] p-2 rounded border border-[#3a494b]/40 font-mono text-[12px]">
-                <span className="text-[#b9cacb] truncate mr-2">{baseUrl}</span>
+              <div className="flex items-center justify-between bg-surface-container-lowest p-2 rounded border border-outline-variant/40 font-mono text-[12px]">
+                <span className="text-on-surface-variant truncate mr-2">{baseUrl}</span>
                 <button
                   onClick={copyUrl}
-                  className="text-[#00dce6] hover:text-[#6ff6ff] text-[11px] flex items-center gap-1 shrink-0"
+                  className="text-[#00dce6] hover:text-primary-fixed text-[11px] flex items-center gap-1 shrink-0"
                 >
                   <span className="material-symbols-outlined text-[14px]">
                     {copied ? "check" : "content_copy"}
@@ -178,10 +178,10 @@ export default function QuickPeekModal({
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                <span className="font-mono text-[11px] text-[#849495]">
+                <span className="font-mono text-[11px] text-outline">
                   IP: <span className="text-[#e3e1e9]">{service.ip}</span>
                 </span>
-                <span className="font-mono text-[11px] text-[#849495]">
+                <span className="font-mono text-[11px] text-outline">
                   Ping: <span className="text-[#00dce6]">{pingUrl}</span>
                 </span>
               </div>
@@ -202,17 +202,17 @@ export default function QuickPeekModal({
                         style={{ height: `${height}%` }}
                         className={`flex-1 rounded-t-xs border-t ${
                           isOffline
-                            ? "bg-gradient-to-t from-[#ffb4ab]/25 via-[#ffb4ab]/50 to-[#ffb4ab] border-[#ffb4ab]/70"
+                            ? "bg-linear-to-t from-error/25 via-error/50 to-error border-error/70"
                             : isWarning
-                            ? "bg-gradient-to-t from-amber-500/25 via-amber-500/50 to-amber-400 border-amber-400/70"
-                            : "bg-gradient-to-t from-[#4edea3]/25 via-[#4edea3]/50 to-[#4edea3] border-[#4edea3]/70"
+                            ? "bg-linear-to-t from-amber-500/25 via-amber-500/50 to-amber-400 border-amber-400/70"
+                            : "bg-linear-to-t from-[#4edea3]/25 via-[#4edea3]/50 to-[#4edea3] border-[#4edea3]/70"
                         }`}
                       />
                     );
                   })}
                 </div>
               ) : (
-                <div className="w-full h-16 flex items-center justify-center font-mono text-[11px] text-[#849495]">
+                <div className="w-full h-16 flex items-center justify-center font-mono text-[11px] text-outline">
                   No history yet — checks are recorded every 30s.
                 </div>
               )}
@@ -226,13 +226,13 @@ export default function QuickPeekModal({
                 </span>
                 <button
                   onClick={() => setIframeKey((k) => k + 1)}
-                  className="text-[#b9cacb] hover:text-[#00dce6] font-mono text-[11px] flex items-center gap-1 cursor-pointer"
+                  className="text-on-surface-variant hover:text-[#00dce6] font-mono text-[11px] flex items-center gap-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[14px]">refresh</span>
                   Reload
                 </button>
               </div>
-              <div className="bg-[#0d0e13] rounded border border-[#3a494b]/40 overflow-auto p-3 flex justify-center">
+              <div className="bg-surface-container-lowest rounded border border-outline-variant/40 overflow-auto p-3 flex justify-center">
                 <div
                   style={{ width: VIEWPORTS[viewport].width }}
                   className="max-w-full transition-all duration-300"
@@ -241,14 +241,14 @@ export default function QuickPeekModal({
                     key={iframeKey}
                     src={baseUrl}
                     title={`${service.name} preview`}
-                    className="w-full bg-white rounded border border-[#3a494b]/30"
+                    className="w-full bg-white rounded border border-outline-variant/30"
                     style={{ height: 420 }}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                   />
                 </div>
               </div>
               {isOffline && (
-                <p className="font-mono text-[11px] text-[#ffb4ab]">
+                <p className="font-mono text-[11px] text-error">
                   Service is offline — preview may not load.
                 </p>
               )}
@@ -257,7 +257,7 @@ export default function QuickPeekModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-[#3a494b]/30 bg-[#121318]/70">
+        <div className="flex items-center justify-between px-6 py-3 border-t border-outline-variant/30 bg-[#121318]/70">
           <button
             onClick={() => {
               onClose();
@@ -272,7 +272,7 @@ export default function QuickPeekModal({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onRestart(service)}
-              className="text-[#b9cacb] hover:text-[#e3e1e9] font-mono text-[11px] px-3 py-1.5 flex items-center gap-1 cursor-pointer"
+              className="text-on-surface-variant hover:text-[#e3e1e9] font-mono text-[11px] px-3 py-1.5 flex items-center gap-1 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[14px]">refresh</span>
               <span>Restart</span>

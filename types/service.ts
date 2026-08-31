@@ -2,6 +2,19 @@ export type ServiceStatus = "online" | "offline" | "checking";
 
 export const WARNING_LATENCY_THRESHOLD_MS = 800;
 
+export const COMPANIES = [
+  "LASER POWER INFRA",
+  "GM DALUI",
+  "UIC",
+  "CEEBUILD",
+] as const;
+
+export function getCompany(service: Pick<ServiceItem, "tags">): string | null {
+  return (
+    service.tags.find((t) => (COMPANIES as readonly string[]).includes(t)) ?? null
+  );
+}
+
 export function deriveDisplayStatus(
   service: Pick<ServiceItem, "status" | "latency">
 ): "online" | "warning" | "offline" | "checking" {

@@ -8,18 +8,9 @@ import DeployModal from "@/components/DeployModal";
 import QuickPeekModal from "@/components/QuickPeekModal";
 import { useServices, type ServiceInput } from "@/hooks/useServices";
 import { useServiceHealth, type HealthState } from "@/hooks/useServiceHealth";
-import { deriveDisplayStatus, buildBaseUrl, type ServiceItem } from "@/types/service";
+import { deriveDisplayStatus, buildBaseUrl, COMPANIES, getCompany, type ServiceItem } from "@/types/service";
 
-const CATEGORY_FILTERS = [
-  "All",
-  "Core Infrastructure",
-  "Microservice",
-  "Database",
-  "Frontend",
-  "API",
-  "Workers",
-  "Full Stack"
-];
+const COMPANY_FILTERS = ["All", ...COMPANIES];
 
 interface LiveServiceCardProps {
   service: ServiceItem;
@@ -117,27 +108,27 @@ export default function NexusPortDashboard() {
     return `${Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)}ms`;
   }, [liveServices]);
 
-  const categoryCounts = useMemo(() => {
+  const companyCounts = useMemo(() => {
     const counts: Record<string, number> = { All: services.length };
     for (const s of services) {
-      counts[s.category] = (counts[s.category] || 0) + 1;
+      const c = getCompany(s);
+      if (c) counts[c] = (counts[c] || 0) + 1;
     }
     return counts;
   }, [services]);
 
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
-      const matchesCategory =
-        selectedFilter === "All" || service.category === selectedFilter;
+      const matchesCompany =
+        selectedFilter === "All" || service.tags.includes(selectedFilter);
       const q = searchQuery.trim().toLowerCase();
       const matchesSearch =
         !q ||
         service.name.toLowerCase().includes(q) ||
         service.ip.toLowerCase().includes(q) ||
         service.port.toString().includes(q) ||
-        service.category.toLowerCase().includes(q) ||
         service.tags.some((t) => t.toLowerCase().includes(q));
-      return matchesCategory && matchesSearch;
+      return matchesCompany && matchesSearch;
     });
   }, [services, selectedFilter, searchQuery]);
 
@@ -185,7 +176,7 @@ export default function NexusPortDashboard() {
   return (
     <div className="font-body-default min-h-screen flex flex-col bg-[#090a0f] text-[#e3e1e9]">
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#121318] border border-[#00f2fe] text-[#e0fdff] px-4 py-3 rounded shadow-[0_0_20px_rgba(0,242,254,0.3)] flex items-center gap-2 font-mono text-[12px] animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#121318] border border-primary-container text-primary px-4 py-3 rounded shadow-[0_0_20px_rgba(0,242,254,0.3)] flex items-center gap-2 font-mono text-[12px] animate-bounce">
           <span className="material-symbols-outlined text-[#4edea3] text-[18px]">
             check_circle
           </span>
@@ -222,9 +213,9 @@ export default function NexusPortDashboard() {
             </div>
           ) : error ? (
             <div className="bento-card p-12 text-center flex flex-col items-center justify-center gap-3">
-              <span className="material-symbols-outlined text-[#ffb4ab] text-[48px]">error</span>
+              <span className="material-symbols-outlined text-error text-[48px]">error</span>
               <h3 className="text-[18px] font-bold text-[#e3e1e9]">Failed to load services</h3>
-              <p className="text-[#b9cacb] font-mono text-[12px]">{error}</p>
+              <p className="text-on-surface-variant font-mono text-[12px]">{error}</p>
               <button
                 onClick={loadServices}
                 className="neon-button font-mono text-[12px] px-4 py-2 rounded mt-2 cursor-pointer"
@@ -236,9 +227,9 @@ export default function NexusPortDashboard() {
             <>
               {activeTab === "dashboard" && (
                 <>
-                  <div className="flex overflow-x-auto gap-2.5 pb-4 mb-6 hide-scrollbar border-b border-[#3a494b]/30">
-                    {CATEGORY_FILTERS.map((filter) => {
-                      const count = categoryCounts[filter] || 0;
+                  <div className="flex overflow-x-auto gap-2.5 pb-4 mb-6 hide-scrollbar border-b border-outline-variant/30">
+                    {COMPANY_FILTERS.map((filter) => {
+                      const count = companyCounts[filter] || 0;
                       const isSelected = selectedFilter === filter;
                       return (
                         <button
@@ -246,8 +237,8 @@ export default function NexusPortDashboard() {
                           onClick={() => setSelectedFilter(filter)}
                           className={`px-4 py-1.5 rounded-full font-mono text-[12px] whitespace-nowrap transition-all cursor-pointer ${
                             isSelected
-                              ? "bg-[#00f2fe]/15 border border-[#00f2fe] text-[#6ff6ff] shadow-[0_0_12px_rgba(0,242,254,0.2)] font-semibold"
-                              : "bg-[#34343a]/40 border border-[#3a494b]/30 text-[#b9cacb] hover:text-[#e3e1e9] hover:border-[#849495]"
+                              ? "bg-primary-container/15 border border-primary-container text-primary-fixed shadow-[0_0_12px_rgba(0,242,254,0.2)] font-semibold"
+                              : "bg-[#34343a]/40 border border-outline-variant/30 text-on-surface-variant hover:text-[#e3e1e9] hover:border-outline"
                           }`}
                         >
                           {filter} ({count})
@@ -258,13 +249,13 @@ export default function NexusPortDashboard() {
 
                   {filteredServices.length === 0 ? (
                     <div className="bento-card p-12 text-center flex flex-col items-center justify-center gap-3">
-                      <span className="material-symbols-outlined text-[#849495] text-[48px]">
+                      <span className="material-symbols-outlined text-outline text-[48px]">
                         search_off
                       </span>
                       <h3 className="text-[18px] font-bold text-[#e3e1e9]">
                         No services match your filter
                       </h3>
-                      <p className="text-[#b9cacb] font-mono text-[12px]">
+                      <p className="text-on-surface-variant font-mono text-[12px]">
                         Try changing your category filter or search query.
                       </p>
                       <button
@@ -300,8 +291,8 @@ export default function NexusPortDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center mb-4">
                     <div>
-                      <h2 className="text-[24px] font-bold text-[#e0fdff]">Deployments & Pipelines</h2>
-                      <p className="font-mono text-[12px] text-[#b9cacb]">
+                      <h2 className="text-[24px] font-bold text-primary">Deployments & Pipelines</h2>
+                      <p className="font-mono text-[12px] text-on-surface-variant">
                         Registered services and their health history
                       </p>
                     </div>
@@ -318,9 +309,9 @@ export default function NexusPortDashboard() {
                     <span className="font-mono text-[11px] text-[#00dce6] uppercase tracking-wider font-bold">
                       Registered Services
                     </span>
-                    <div className="divide-y divide-[#3a494b]/30 font-mono text-[12px]">
+                    <div className="divide-y divide-outline-variant/30 font-mono text-[12px]">
                       {liveServices.length === 0 ? (
-                        <div className="py-3 text-[#849495]">No services registered yet.</div>
+                        <div className="py-3 text-outline">No services registered yet.</div>
                       ) : (
                         liveServices.map((svc) => {
                           const status = deriveDisplayStatus(svc);
@@ -334,13 +325,13 @@ export default function NexusPortDashboard() {
                                       : status === "warning"
                                       ? "bg-amber-400"
                                       : status === "offline"
-                                      ? "bg-[#ffb4ab]"
-                                      : "bg-[#849495]"
+                                      ? "bg-error"
+                                      : "bg-outline"
                                   }`}
                                 />
                                 <div>
                                   <span className="text-[#e3e1e9] font-bold">{svc.name}</span>
-                                  <span className="text-[#849495] text-[10px] block">
+                                  <span className="text-outline text-[10px] block">
                                     {svc.ip}:{svc.port} • {svc.category}
                                   </span>
                                 </div>
@@ -351,17 +342,17 @@ export default function NexusPortDashboard() {
                                     status === "online"
                                       ? "bg-[#4edea3]/10 text-[#4edea3] border-[#4edea3]/20"
                                       : status === "offline"
-                                      ? "bg-[#ffb4ab]/10 text-[#ffb4ab] border-[#ffb4ab]/20"
+                                      ? "bg-error/10 text-error border-error/20"
                                       : status === "warning"
                                       ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
-                                      : "bg-[#849495]/10 text-[#849495] border-[#849495]/20"
+                                      : "bg-outline/10 text-outline border-outline/20"
                                   }`}
                                 >
                                   {status.toUpperCase()}
                                 </span>
                                 <button
                                   onClick={() => setQuickPeekService(svc)}
-                                  className="text-[#b9cacb] hover:text-[#00dce6]"
+                                  className="text-on-surface-variant hover:text-[#00dce6]"
                                 >
                                   <span className="material-symbols-outlined text-[16px]">
                                     visibility
@@ -379,7 +370,7 @@ export default function NexusPortDashboard() {
 
               {activeTab === "infrastructure" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]">Infrastructure Topology</h2>
+                  <h2 className="text-[24px] font-bold text-primary">Infrastructure Topology</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bento-card p-4 rounded-lg">
                       <span className="font-mono text-[10px] text-[#00dce6] uppercase block font-bold">
@@ -388,31 +379,31 @@ export default function NexusPortDashboard() {
                       <span className="text-[28px] font-mono font-bold text-[#e3e1e9]">
                         {totalCount} Active
                       </span>
-                      <p className="text-[12px] text-[#849495] mt-1">
+                      <p className="text-[12px] text-outline mt-1">
                         {onlineCount} online, {totalCount - onlineCount} offline
                       </p>
                     </div>
                     <div className="bento-card p-4 rounded-lg">
                       <span className="font-mono text-[10px] text-[#4edea3] uppercase block font-bold">
-                        Categories
+                        Companies
                       </span>
                       <span className="text-[28px] font-mono font-bold text-[#e3e1e9]">
-                        {Object.keys(categoryCounts).filter((k) => k !== "All").length}
+                        {Object.keys(companyCounts).filter((k) => k !== "All").length}
                       </span>
-                      <p className="text-[12px] text-[#849495] mt-1">
-                        {Object.keys(categoryCounts)
+                      <p className="text-[12px] text-outline mt-1">
+                        {Object.keys(companyCounts)
                           .filter((k) => k !== "All")
                           .join(", ") || "None"}
                       </p>
                     </div>
                     <div className="bento-card p-4 rounded-lg">
-                      <span className="font-mono text-[10px] text-[#ffb2b7] uppercase block font-bold">
+                      <span className="font-mono text-[10px] text-tertiary-fixed-dim uppercase block font-bold">
                         Average Latency
                       </span>
                       <span className="text-[28px] font-mono font-bold text-[#e3e1e9]">
                         {avgLatency}
                       </span>
-                      <p className="text-[12px] text-[#849495] mt-1">Live client-side ping</p>
+                      <p className="text-[12px] text-outline mt-1">Live client-side ping</p>
                     </div>
                   </div>
                 </div>
@@ -420,12 +411,12 @@ export default function NexusPortDashboard() {
 
               {activeTab === "security" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]">Security & Firewall Rules</h2>
+                  <h2 className="text-[24px] font-bold text-primary">Security & Firewall Rules</h2>
                   <div className="bento-card p-6 rounded-lg space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-bold text-[#e3e1e9]">LAN-Aware Health Checks</h3>
-                        <p className="font-mono text-[12px] text-[#b9cacb]">
+                        <p className="font-mono text-[12px] text-on-surface-variant">
                           Status is computed by your browser pinging each registered endpoint.
                           No credentials or tokens are transmitted.
                         </p>
@@ -434,14 +425,14 @@ export default function NexusPortDashboard() {
                         CLIENT-SIDE
                       </span>
                     </div>
-                    <div className="flex items-center justify-between pt-3 border-t border-[#3a494b]/30">
+                    <div className="flex items-center justify-between pt-3 border-t border-outline-variant/30">
                       <div>
                         <h3 className="font-bold text-[#e3e1e9]">Registered Endpoints</h3>
-                        <p className="font-mono text-[12px] text-[#b9cacb]">
+                        <p className="font-mono text-[12px] text-on-surface-variant">
                           {totalCount} services configured for monitoring
                         </p>
                       </div>
-                      <span className="bg-[#00f2fe]/10 text-[#00dce6] px-3 py-1 rounded text-[11px] font-mono border border-[#00f2fe]/30">
+                      <span className="bg-primary-container/10 text-[#00dce6] px-3 py-1 rounded text-[11px] font-mono border border-primary-container/30">
                         {onlineCount} ONLINE
                       </span>
                     </div>
@@ -451,19 +442,19 @@ export default function NexusPortDashboard() {
 
               {activeTab === "analytics" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]">Service Analytics & Metrics</h2>
+                  <h2 className="text-[24px] font-bold text-primary">Service Analytics & Metrics</h2>
                   <div className="bento-card p-6 rounded-lg space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-[12px] text-[#00dce6] uppercase font-bold">
-                        Services per Category
+                        Services per Company
                       </span>
                       <span className="font-mono text-[14px] text-[#4edea3] font-bold">
                         {totalCount} total
                       </span>
                     </div>
                     <div className="w-full flex items-end gap-3 pt-4 h-36">
-                      {CATEGORY_FILTERS.filter((c) => c !== "All").map((cat) => {
-                        const count = categoryCounts[cat] || 0;
+                      {COMPANY_FILTERS.filter((c) => c !== "All").map((cat) => {
+                        const count = companyCounts[cat] || 0;
                         const pct = totalCount ? (count / totalCount) * 100 : 0;
                         return (
                           <div
@@ -473,9 +464,9 @@ export default function NexusPortDashboard() {
                           >
                             <div
                               style={{ height: `${Math.max(pct, count > 0 ? 8 : 0)}%` }}
-                              className="w-full bg-gradient-to-t from-[#00f2fe]/10 via-[#00f2fe]/40 to-[#00f2fe] rounded-t-xs"
+                              className="w-full bg-linear-to-t from-primary-container/10 via-primary-container/40 to-primary-container rounded-t-xs"
                             />
-                            <span className="font-mono text-[9px] text-[#849495] truncate w-full text-center">
+                            <span className="font-mono text-[9px] text-outline truncate w-full text-center">
                               {count}
                             </span>
                           </div>
@@ -488,21 +479,21 @@ export default function NexusPortDashboard() {
 
               {activeTab === "settings" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]">Settings</h2>
+                  <h2 className="text-[24px] font-bold text-primary">Settings</h2>
                   <div className="bento-card p-6 rounded-lg space-y-4 max-w-2xl">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-bold text-[#e3e1e9]">Live Health Polling</h3>
-                        <p className="font-mono text-[12px] text-[#b9cacb]">
+                        <p className="font-mono text-[12px] text-on-surface-variant">
                           Each registered service is pinged from your browser every 30s.
                         </p>
                       </div>
                       <span className="font-mono text-[12px] text-[#00dce6]">30s</span>
                     </div>
-                    <div className="flex items-center justify-between pt-3 border-t border-[#3a494b]/30">
+                    <div className="flex items-center justify-between pt-3 border-t border-outline-variant/30">
                       <div>
                         <h3 className="font-bold text-[#e3e1e9]">History Persistence</h3>
-                        <p className="font-mono text-[12px] text-[#b9cacb]">
+                        <p className="font-mono text-[12px] text-on-surface-variant">
                           Latency samples are stored per service for sparklines.
                         </p>
                       </div>
@@ -514,15 +505,15 @@ export default function NexusPortDashboard() {
 
               {activeTab === "docs" && (
                 <div className="space-y-4">
-                  <h2 className="text-[24px] font-bold text-[#e0fdff]"> Documentation</h2>
-                  <div className="bento-card p-6 rounded-lg space-y-3 font-mono text-[12px] text-[#b9cacb] max-w-3xl">
+                  <h2 className="text-[24px] font-bold text-primary"> Documentation</h2>
+                  <div className="bento-card p-6 rounded-lg space-y-3 font-mono text-[12px] text-on-surface-variant max-w-3xl">
                     <p className="text-[#e3e1e9] font-bold text-[14px]">Getting started</p>
                     <p>
                       Register a service with its name, IP, and port via the Deploy button. The
                       dashboard pings it from your browser and shows live online/offline badges and
                       latency sparklines.
                     </p>
-                    <div className="p-3 bg-[#0d0e13] rounded border border-[#3a494b]/30">
+                    <div className="p-3 bg-surface-container-lowest rounded border border-outline-variant/30">
                       <code>+ Deploy → name, IP (192.168.1.50), port (3000), category</code>
                     </div>
                   </div>
