@@ -67,7 +67,7 @@ export default function Sidebar({
         </div>
 
         {/* Deploy Button */}
-        <button
+        {/* <button
           onClick={() => {
             onOpenDeployModal();
             if (onCloseMobile) onCloseMobile();
@@ -76,7 +76,7 @@ export default function Sidebar({
         >
           <span className="material-symbols-outlined text-[16px] group-hover:rotate-90 transition-transform">add</span>
           <span>+ Deploy</span>
-        </button>
+        </button> */}
 
         {/* Navigation Tabs */}
         <div className="flex-1 flex flex-col gap-1">

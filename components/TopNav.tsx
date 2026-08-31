@@ -85,7 +85,7 @@ export default function TopNav({
 
         {/* Action icons */}
         <div className="flex items-center gap-1 md:gap-2 text-[#b9cacb]">
-          <button
+          {/* <button
             title="Cluster Telemetry"
             className="p-1.5 md:p-2 hover:bg-[#00f2fe]/10 hover:text-[#6ff6ff] transition-colors rounded-[0.125rem] cursor-pointer"
           >
@@ -96,7 +96,7 @@ export default function TopNav({
             className="p-1.5 md:p-2 hover:bg-[#00f2fe]/10 hover:text-[#6ff6ff] transition-colors rounded-[0.125rem] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">memory</span>
-          </button>
+          </button> */}
           <button
             title="User Profile & Security Keys"
             className="p-1.5 md:p-2 hover:bg-[#00f2fe]/10 hover:text-[#6ff6ff] transition-colors rounded-[0.125rem] cursor-pointer"

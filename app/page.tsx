@@ -7,7 +7,7 @@ import ServiceCard from "@/components/ServiceCard";
 import DeployModal from "@/components/DeployModal";
 import QuickPeekModal from "@/components/QuickPeekModal";
 import { useServices, type ServiceInput } from "@/hooks/useServices";
-import { useServiceHealth } from "@/hooks/useServiceHealth";
+import { useServiceHealth, type HealthState } from "@/hooks/useServiceHealth";
 import { deriveDisplayStatus, buildBaseUrl, type ServiceItem } from "@/types/service";
 
 const CATEGORY_FILTERS = [
@@ -28,6 +28,7 @@ interface LiveServiceCardProps {
   onEdit: (s: ServiceItem) => void;
   onRestart: (s: ServiceItem) => void;
   onLaunch: (s: ServiceItem) => void;
+  onHealthChange?: (id: string, health: HealthState) => void;
 }
 
 function LiveServiceCard({
@@ -37,9 +38,15 @@ function LiveServiceCard({
   onEdit,
   onRestart,
   onLaunch,
+  onHealthChange,
 }: LiveServiceCardProps) {
   const health = useServiceHealth(service, { checkSignal: restartSignal });
   const liveService: ServiceItem = { ...service, status: health.status, latency: health.latency };
+
+  React.useEffect(() => {
+    onHealthChange?.(service.id, health);
+  }, [service.id, health.status, health.latency, onHealthChange]);
+
   return (
     <ServiceCard
       service={liveService}
@@ -67,6 +74,7 @@ export default function NexusPortDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [restartSignals, setRestartSignals] = useState<Record<string, number>>({});
+  const [healthMap, setHealthMap] = useState<Record<string, HealthState>>({});
 
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
@@ -78,19 +86,36 @@ export default function NexusPortDashboard() {
     setTimeout(() => setToastMessage(null), 3000);
   }, []);
 
+  const handleHealthChange = useCallback((id: string, health: HealthState) => {
+    setHealthMap((prev) => {
+      const cur = prev[id];
+      if (cur && cur.status === health.status && cur.latency === health.latency) return prev;
+      return { ...prev, [id]: health };
+    });
+  }, []);
+
+  const liveServices = useMemo(
+    () =>
+      services.map((s) => {
+        const h = healthMap[s.id];
+        return h ? { ...s, status: h.status, latency: h.latency } : s;
+      }),
+    [services, healthMap]
+  );
+
   const onlineCount = useMemo(
-    () => services.filter((s) => deriveDisplayStatus(s) === "online").length,
-    [services]
+    () => liveServices.filter((s) => deriveDisplayStatus(s) === "online").length,
+    [liveServices]
   );
   const totalCount = services.length;
 
   const avgLatency = useMemo(() => {
-    const latencies = services
+    const latencies = liveServices
       .map((s) => s.latency)
       .filter((l): l is number => l !== null && l !== undefined);
     if (latencies.length === 0) return "--";
     return `${Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)}ms`;
-  }, [services]);
+  }, [liveServices]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: services.length };
@@ -263,6 +288,7 @@ export default function NexusPortDashboard() {
                           onEdit={handleEditService}
                           onRestart={handleRestartService}
                           onLaunch={(s) => window.open(buildBaseUrl(s), "_blank")}
+                          onHealthChange={handleHealthChange}
                         />
                       ))}
                     </div>
@@ -293,10 +319,10 @@ export default function NexusPortDashboard() {
                       Registered Services
                     </span>
                     <div className="divide-y divide-[#3a494b]/30 font-mono text-[12px]">
-                      {services.length === 0 ? (
+                      {liveServices.length === 0 ? (
                         <div className="py-3 text-[#849495]">No services registered yet.</div>
                       ) : (
-                        services.map((svc) => {
+                        liveServices.map((svc) => {
                           const status = deriveDisplayStatus(svc);
                           return (
                             <div key={svc.id} className="py-3 flex items-center justify-between">
