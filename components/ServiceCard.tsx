@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ServiceItem, deriveDisplayStatus, buildBaseUrl, getCompany } from "@/types/service";
+import { ServiceItem, deriveDisplayStatus, buildBaseUrl, getCompany, displayAddress } from "@/types/service";
 
 interface ServiceCardProps {
   service: ServiceItem;
@@ -76,7 +76,7 @@ export default function ServiceCard({
 
         <div className="flex flex-wrap gap-2 mb-4">
           <span className="bg-primary/10 text-[#00dce6] px-2 py-0.5 rounded-xs font-mono text-[12px] border border-[#00dce6]/20">
-            {service.ip}:{service.port}
+            {displayAddress(service)}
           </span>
           <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-0.5 rounded-xs font-mono text-[12px] border border-[#4edea3]/20">
             {service.protocol || "HTTP"}
@@ -173,7 +173,7 @@ export default function ServiceCard({
 
         <div className="flex items-center gap-2 mb-4">
           <span className="bg-[#34343a] text-outline px-2 py-0.5 rounded-xs font-mono text-[12px] border border-outline-variant/30 w-max">
-            {service.ip}:{service.port}
+            {displayAddress(service)}
           </span>
           <span className="text-outline font-mono text-[10px] uppercase">
             {getCompany(service) ?? "—"}
@@ -237,7 +237,7 @@ export default function ServiceCard({
 
       <div className="flex items-center gap-2 mb-4">
         <span className="bg-primary/10 text-[#00dce6] px-2 py-0.5 rounded-xs font-mono text-[12px] border border-[#00dce6]/20 w-max">
-          {service.ip}:{service.port}
+          {displayAddress(service)}
         </span>
         <span className="text-outline font-mono text-[10px] uppercase truncate">
           {getCompany(service) ?? "—"}

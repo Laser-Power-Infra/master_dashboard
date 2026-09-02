@@ -9,10 +9,36 @@ export const COMPANIES = [
   "CEEBUILD",
 ] as const;
 
+export const SERVICE_TAGS = ["SERVICES"] as const;
+
 export function getCompany(service: Pick<ServiceItem, "tags">): string | null {
   return (
     service.tags.find((t) => (COMPANIES as readonly string[]).includes(t)) ?? null
   );
+}
+
+export function getCommonTag(service: Pick<ServiceItem, "tags">): string | null {
+  return (
+    service.tags.find((t) => (SERVICE_TAGS as readonly string[]).includes(t)) ?? null
+  );
+}
+
+export function isPublicService(
+  service: Pick<ServiceItem, "protocol" | "baseUrl">
+): boolean {
+  return service.protocol === "HTTPS" || service.baseUrl?.startsWith("https://") === true;
+}
+
+export function displayAddress(
+  service: Pick<ServiceItem, "baseUrl" | "ip" | "port" | "protocol">
+): string {
+  const base = service.baseUrl?.trim();
+  if (base && base.toLowerCase() !== "null") {
+    return base.replace(/\/null/g, "");
+  }
+  const scheme = service.protocol === "HTTPS" ? "https" : "http";
+  const cleanIp = service.ip?.trim() || "127.0.0.1";
+  return `${scheme}://${cleanIp}:${service.port}`;
 }
 
 export function deriveDisplayStatus(
@@ -71,6 +97,34 @@ export function buildBaseUrl(service: Pick<ServiceItem, "baseUrl" | "protocol" |
 }
 
 export const DEFAULT_HEALTHCHECK_PATH = "/api/health";
+
+export interface DerivedUrlParts {
+  ip: string;
+  port: number;
+  protocol: string;
+  baseUrl: string;
+}
+
+export function parsePublicUrl(raw: string): DerivedUrlParts | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+  if (!parsed.hostname) return null;
+  const protocol = parsed.protocol === "https:" ? "HTTPS" : "HTTP";
+  const port = parsed.port ? Number(parsed.port) : protocol === "HTTPS" ? 443 : 80;
+  return {
+    ip: parsed.hostname,
+    port,
+    protocol,
+    baseUrl: trimmed.replace(/\/$/, ""),
+  };
+}
 
 export function buildPingUrl(service: Pick<ServiceItem, "baseUrl" | "protocol" | "ip" | "port" | "healthcheck">): string {
   const base = buildBaseUrl(service);

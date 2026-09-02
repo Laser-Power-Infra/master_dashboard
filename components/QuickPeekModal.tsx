@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { ServiceItem } from "@/types/service";
-import { deriveDisplayStatus, buildBaseUrl, buildPingUrl, getCompany } from "@/types/service";
+import { deriveDisplayStatus, buildBaseUrl, buildPingUrl, getCompany, displayAddress } from "@/types/service";
 import { useServiceHealth } from "@/hooks/useServiceHealth";
 
 interface QuickPeekModalProps {
@@ -32,9 +32,7 @@ export default function QuickPeekModal({
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [iframeKey, setIframeKey] = useState(0);
 
-  const health = useServiceHealth(service, {
-    persist: false,
-  });
+  const health = useServiceHealth(service);
 
   if (!isOpen || !service) return null;
 
@@ -92,7 +90,7 @@ export default function QuickPeekModal({
             <div>
               <h2 className="text-[18px] font-bold text-[#e3e1e9]">{service.name}</h2>
               <span className="font-mono text-[11px] text-on-surface-variant uppercase">
-                {getCompany(service) ?? "No Company"} {`//`} {service.ip}:{service.port} {`//`} {statusLabel}
+                {getCompany(service) ?? "No Company"} {`//`} {displayAddress(service)} {`//`} {statusLabel}
               </span>
             </div>
           </div>

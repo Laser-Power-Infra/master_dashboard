@@ -8,9 +8,9 @@ import DeployModal from "@/components/DeployModal";
 import QuickPeekModal from "@/components/QuickPeekModal";
 import { useServices, type ServiceInput } from "@/hooks/useServices";
 import { useServiceHealth, type HealthState } from "@/hooks/useServiceHealth";
-import { deriveDisplayStatus, buildBaseUrl, COMPANIES, getCompany, type ServiceItem } from "@/types/service";
+import { deriveDisplayStatus, buildBaseUrl, COMPANIES, SERVICE_TAGS, getCompany, getCommonTag, displayAddress, type ServiceItem } from "@/types/service";
 
-const COMPANY_FILTERS = ["All", ...COMPANIES];
+const COMPANY_FILTERS = ["All", ...SERVICE_TAGS, ...COMPANIES];
 
 interface LiveServiceCardProps {
   service: ServiceItem;
@@ -113,6 +113,8 @@ export default function NexusPortDashboard() {
     for (const s of services) {
       const c = getCompany(s);
       if (c) counts[c] = (counts[c] || 0) + 1;
+      const t = getCommonTag(s);
+      if (t) counts[t] = (counts[t] || 0) + 1;
     }
     return counts;
   }, [services]);
@@ -332,7 +334,7 @@ export default function NexusPortDashboard() {
                                 <div>
                                   <span className="text-[#e3e1e9] font-bold">{svc.name}</span>
                                   <span className="text-outline text-[10px] block">
-                                    {svc.ip}:{svc.port} • {svc.category}
+                                    {displayAddress(svc)} • {getCompany(svc) ?? "—"}
                                   </span>
                                 </div>
                               </div>

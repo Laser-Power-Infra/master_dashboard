@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { buildPingUrl, type ServiceItem } from "@/types/service";
+import { buildPingUrl, isPublicService, type ServiceItem } from "@/types/service";
 
 export type HealthStatus = "online" | "offline" | "checking";
 
@@ -11,7 +11,6 @@ export interface HealthState {
 interface UseServiceHealthOptions {
   intervalMs?: number;
   timeoutMs?: number;
-  persist?: boolean;
   checkSignal?: number;
 }
 
@@ -20,7 +19,6 @@ export function useServiceHealth(
   {
     intervalMs = 30000,
     timeoutMs = 2500,
-    persist = false,
     checkSignal = 0,
   }: UseServiceHealthOptions = {}
 ): HealthState {
@@ -29,26 +27,49 @@ export function useServiceHealth(
 
   const url = service ? buildPingUrl(service) : "";
   const serviceId = service?.id ?? "";
+  const publicService = service ? isPublicService(service) : false;
 
   useEffect(() => {
-    if (!serviceId || !url) return;
+    if (!serviceId) return;
 
     let isMounted = true;
 
-    console.log(`[HealthCheck] START ${service?.name ?? serviceId} -> ${url}`);
-
-    // Health persistence disabled per request — no DB writes. UI shows live fetch result only.
-    // const recordCheck = (checkStatus: "ONLINE" | "OFFLINE", ms: number | null) => {
-    //   if (!persist) return;
-    //   console.log(`[HealthCheck] POST internal /api/services/${serviceId}/health`, checkStatus, ms);
-    //   fetch(`/api/services/${serviceId}/health`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ status: checkStatus, latencyMs: ms }),
-    //   }).catch(() => {});
-    // };
+    console.log(`[HealthCheck] START ${service?.name ?? serviceId} -> ${publicService ? "PROBE" : url}`);
 
     const checkHealth = async () => {
+      if (publicService) {
+        // Public (Vercel/HTTPS): server-side probe — reads real status, no CORS issue.
+        console.log(`[HealthCheck] probing /api/services/${serviceId}/probe`);
+        try {
+          const res = await fetch(`/api/services/${serviceId}/probe`, {
+            cache: "no-store",
+          });
+          if (!res.ok) {
+            if (isMounted) {
+              setLatency(null);
+              setStatus("offline");
+            }
+            return;
+          }
+          const data: { status: string; latencyMs: number | null } = await res.json();
+          if (isMounted) {
+            if (data.status === "ONLINE") {
+              setLatency(data.latencyMs);
+              setStatus("online");
+            } else {
+              setLatency(null);
+              setStatus("offline");
+            }
+          }
+        } catch {
+          if (isMounted) {
+            setLatency(null);
+            setStatus("offline");
+          }
+        }
+        return;
+      }
+
       console.log(`[HealthCheck] fetching ${url}`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -103,7 +124,7 @@ export function useServiceHealth(
       isMounted = false;
       clearInterval(interval);
     };
-  }, [url, serviceId, intervalMs, timeoutMs, persist, checkSignal]);
+  }, [url, serviceId, intervalMs, timeoutMs, publicService, checkSignal]);
 
   return { status, latency };
 }

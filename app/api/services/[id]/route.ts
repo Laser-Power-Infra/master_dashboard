@@ -4,6 +4,7 @@ import {
   CATEGORY_ENUM,
   PROTOCOL_ENUM,
 } from "@/lib/service-mapper";
+import { parsePublicUrl } from "@/types/service";
 
 export async function PATCH(
   request: Request,
@@ -19,15 +20,19 @@ export async function PATCH(
 
   const data: Record<string, unknown> = {};
 
+  const hasPublicUrl =
+    body.baseUrl !== undefined &&
+    String(body.baseUrl ?? "").trim() !== "";
+
   if (body.name !== undefined) data.name = String(body.name).trim();
-  if (body.ip !== undefined) {
+  if (body.ip !== undefined && !hasPublicUrl) {
     const rawIp = String(body.ip).trim();
     if (rawIp.toLowerCase() === "null" || rawIp === "") {
       return Response.json({ error: "ip cannot be 'null' or empty" }, { status: 400 });
     }
     data.ip = rawIp;
   }
-  if (body.port !== undefined) data.port = Number(body.port);
+  if (body.port !== undefined && !hasPublicUrl) data.port = Number(body.port);
   if (body.category !== undefined) {
     const category = CATEGORY_ENUM[String(body.category)];
     if (!category) {
@@ -48,7 +53,31 @@ export async function PATCH(
   }
   if (body.baseUrl !== undefined) {
     const raw = String(body.baseUrl).trim();
-    data.baseUrl = !raw || raw.toLowerCase() === "null" ? null : raw.replace(/\/null/g, "");
+    if (raw) {
+      const derived = parsePublicUrl(raw);
+      if (!derived) {
+        return Response.json({ error: "Invalid public URL" }, { status: 400 });
+      }
+      data.baseUrl = derived.baseUrl;
+      data.ip = derived.ip;
+      data.port = derived.port;
+      data.protocol = PROTOCOL_ENUM[derived.protocol] ?? "HTTPS";
+    } else {
+      // baseUrl cleared → require LAN fields from body
+      if (!body.ip || !body.port) {
+        return Response.json(
+          { error: "ip and port are required when public URL is cleared" },
+          { status: 400 }
+        );
+      }
+      const rawIp = String(body.ip).trim();
+      if (rawIp.toLowerCase() === "null" || rawIp === "") {
+        return Response.json({ error: "ip cannot be 'null' or empty" }, { status: 400 });
+      }
+      data.baseUrl = null;
+      data.ip = rawIp;
+      data.port = Number(body.port);
+    }
   }
   if (body.isLarge !== undefined) data.isLarge = Boolean(body.isLarge);
   if (body.enabled !== undefined) data.enabled = Boolean(body.enabled);

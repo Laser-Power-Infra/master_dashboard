@@ -2,7 +2,13 @@
 
 import React, { useState } from "react";
 import type { ServiceItem } from "@/types/service";
-import { COMPANIES, getCompany } from "@/types/service";
+import {
+  COMPANIES,
+  SERVICE_TAGS,
+  getCompany,
+  getCommonTag,
+  parsePublicUrl,
+} from "@/types/service";
 import type { ServiceInput } from "@/hooks/useServices";
 
 interface DeployModalProps {
@@ -22,19 +28,35 @@ export default function DeployModal({
   onDelete,
   editingService,
 }: DeployModalProps) {
+  const editingBaseUrl = editingService?.baseUrl?.trim() ?? "";
+  const isEditingPublic = !!editingBaseUrl;
+
   const [name, setName] = useState(editingService?.name ?? "");
   const [company, setCompany] = useState(
     editingService ? getCompany(editingService) ?? "" : ""
   );
-  const [ip, setIp] = useState(editingService?.ip ?? "");
-  const [port, setPort] = useState<number | string>(editingService?.port ?? 8080);
-  const [protocol, setProtocol] = useState(editingService?.protocol ?? "HTTP");
+  const [commonTag, setCommonTag] = useState(
+    editingService ? getCommonTag(editingService) ?? "" : ""
+  );
+  const [ip, setIp] = useState(isEditingPublic ? "" : editingService?.ip ?? "");
+  const [port, setPort] = useState<number | string>(
+    isEditingPublic ? "" : editingService?.port ?? 8080
+  );
+  const [protocol, setProtocol] = useState(
+    isEditingPublic ? "HTTPS" : editingService?.protocol ?? "HTTP"
+  );
   const [healthcheck, setHealthcheck] = useState(editingService?.healthcheck ?? "/api/health");
-  const [baseUrl, setBaseUrl] = useState(editingService?.baseUrl ?? "");
+  const [baseUrl, setBaseUrl] = useState(editingBaseUrl);
   const [description, setDescription] = useState(editingService?.description ?? "");
   const [tagsInput, setTagsInput] = useState(
     editingService?.tags
-      ? editingService.tags.filter((t) => !(COMPANIES as readonly string[]).includes(t)).join(", ")
+      ? editingService.tags
+          .filter(
+            (t) =>
+              !(COMPANIES as readonly string[]).includes(t) &&
+              !(SERVICE_TAGS as readonly string[]).includes(t)
+          )
+          .join(", ")
       : ""
   );
   const [isLarge, setIsLarge] = useState(!!editingService?.isLarge);
@@ -42,32 +64,54 @@ export default function DeployModal({
 
   if (!isOpen) return null;
 
+  const isPublic = baseUrl.trim() !== "";
+
   const parsedTags = tagsInput
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
 
   const cleanHealthcheck = healthcheck.trim() || "/api/health";
-  const cleanBaseUrl = baseUrl.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !ip.trim()) return;
-    const numericPort = Number(port);
-    if (!Number.isInteger(numericPort) || numericPort <= 0 || numericPort > 65535) return;
+    if (!name.trim()) return;
 
-    const allTags = company
-      ? [company, ...parsedTags.filter((t) => t !== company)]
-      : parsedTags;
+    let numericPort = Number(port);
+    let cleanIp = ip.trim();
+    let cleanProtocol = protocol;
+    let cleanBaseUrl = baseUrl.trim();
+
+    if (isPublic) {
+      const derived = parsePublicUrl(cleanBaseUrl);
+      if (!derived) {
+        window.alert("Enter a valid public URL, e.g. https://my-app.vercel.app");
+        return;
+      }
+      cleanIp = derived.ip;
+      numericPort = derived.port;
+      cleanProtocol = derived.protocol;
+      cleanBaseUrl = derived.baseUrl;
+    } else {
+      if (!cleanIp) return;
+      if (!Number.isInteger(numericPort) || numericPort <= 0 || numericPort > 65535) return;
+      cleanBaseUrl = "";
+    }
+
+    const allTags = [
+      ...(company ? [company] : []),
+      ...(commonTag ? [commonTag] : []),
+      ...parsedTags.filter((t) => t !== company && t !== commonTag),
+    ];
 
     setSaving(true);
     try {
       onSave({
         name: name.trim(),
         category: "Microservice",
-        ip: ip.trim(),
+        ip: cleanIp,
         port: numericPort,
-        protocol,
+        protocol: cleanProtocol,
         healthcheck: cleanHealthcheck || null,
         baseUrl: cleanBaseUrl || null,
         description: description.trim() || null,
@@ -161,17 +205,38 @@ export default function DeployModal({
                   </select>
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-mono text-[10px] uppercase text-on-surface-variant">
-                  Description
-                </label>
-                <input
-                  className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
-                  placeholder="Optional description of this service"
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] uppercase text-on-surface-variant">
+                    Common Tag
+                  </label>
+                  <select
+                    className="hud-input w-full font-mono text-[12px] px-0 py-2 bg-[#121318] text-[#e3e1e9] cursor-pointer"
+                    value={commonTag}
+                    onChange={(e) => setCommonTag(e.target.value)}
+                  >
+                    <option value="" className="bg-surface-container text-[#849495]">
+                      — None —
+                    </option>
+                    {SERVICE_TAGS.map((t) => (
+                      <option key={t} value={t} className="bg-surface-container text-[#e3e1e9]">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] uppercase text-on-surface-variant">
+                    Description
+                  </label>
+                  <input
+                    className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
+                    placeholder="Optional description of this service"
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
               </div>
             </section>
 
@@ -190,14 +255,39 @@ export default function DeployModal({
                 <div className="flex flex-col gap-3 mt-1">
                   <div className="flex flex-col gap-1">
                     <label className="font-mono text-[10px] uppercase text-on-surface-variant">
+                      Public URL (Vercel / live dashboard)
+                    </label>
+                    <input
+                      className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
+                      placeholder="https://my-app.vercel.app (leave empty for LAN service)"
+                      type="text"
+                      value={baseUrl}
+                      onChange={(e) => {
+                        setBaseUrl(e.target.value);
+                        if (e.target.value.trim()) {
+                          setIp("");
+                          setPort("");
+                          setProtocol("HTTPS");
+                        }
+                      }}
+                    />
+                    <p className="font-mono text-[10px] text-outline">
+                      {isPublic
+                        ? "Public service — checked server-side via probe. LAN fields disabled."
+                        : "Filling this disables IP / Port / Protocol (public service)."}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-mono text-[10px] uppercase text-on-surface-variant">
                       IP Address *
                     </label>
                     <input
-                      required
-                      className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
+                      required={!isPublic}
+                      disabled={isPublic}
+                      className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50 disabled:opacity-40 disabled:cursor-not-allowed"
                       placeholder="192.168.1.50"
                       type="text"
-                      value={ip}
+                      value={isPublic ? "" : ip}
                       onChange={(e) => setIp(e.target.value)}
                     />
                   </div>
@@ -206,13 +296,14 @@ export default function DeployModal({
                       Port *
                     </label>
                     <input
-                      required
-                      className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
+                      required={!isPublic}
+                      disabled={isPublic}
+                      className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50 disabled:opacity-40 disabled:cursor-not-allowed"
                       placeholder="3000"
                       type="number"
                       min={1}
                       max={65535}
-                      value={port}
+                      value={isPublic ? "" : port}
                       onChange={(e) => setPort(e.target.value)}
                     />
                   </div>
@@ -221,8 +312,9 @@ export default function DeployModal({
                       Protocol
                     </label>
                     <select
-                      className="hud-input w-full font-mono text-[12px] px-0 py-2 bg-[#121318] text-[#e3e1e9] cursor-pointer"
-                      value={protocol}
+                      disabled={isPublic}
+                      className="hud-input w-full font-mono text-[12px] px-0 py-2 bg-[#121318] text-[#e3e1e9] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      value={isPublic ? "HTTPS" : protocol}
                       onChange={(e) => setProtocol(e.target.value)}
                     >
                       {PROTOCOLS.map((p) => (
@@ -231,18 +323,6 @@ export default function DeployModal({
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-mono text-[10px] uppercase text-on-surface-variant">
-                      Base URL (iframe / launch override)
-                    </label>
-                    <input
-                      className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
-                      placeholder="http://192.168.1.50:3000 (optional)"
-                      type="text"
-                      value={baseUrl}
-                      onChange={(e) => setBaseUrl(e.target.value)}
-                    />
                   </div>
                 </div>
               </section>
@@ -271,9 +351,10 @@ export default function DeployModal({
                       onChange={(e) => setHealthcheck(e.target.value)}
                     />
                     <p className="font-mono text-[10px] text-outline">
-                      Dashboard fetches GET {protocol === "HTTPS" ? "https" : "http"}
-                      {"://"}
-                      {ip || "192.168.1.x"}:{port || "8080"}
+                      Dashboard fetches GET{" "}
+                      {isPublic
+                        ? `${baseUrl || "https://..."}`
+                        : `${protocol === "HTTPS" ? "https" : "http"}://${ip || "192.168.1.x"}:${port || "8080"}`}
                       {cleanHealthcheck} every 30s.
                     </p>
                   </div>
@@ -343,13 +424,24 @@ export default function DeployModal({
                   public
                 </span>
                 <span className="text-[#e3e1e9] break-all">
-                  {protocol === "HTTPS" ? "https://" : "http://"}
-                  <span className="text-[#00dce6] font-bold">
-                    {ip || "192.168.1.x"}
-                  </span>
-                  :
-                  <span className="text-tertiary-fixed-dim">{port || "8080"}</span>
-                  <span className="text-on-surface-variant">{cleanHealthcheck}</span>
+                  {isPublic ? (
+                    <>
+                      <span className="text-[#00dce6] font-bold">
+                        {baseUrl || "https://my-app.vercel.app"}
+                      </span>
+                      <span className="text-on-surface-variant">{cleanHealthcheck}</span>
+                    </>
+                  ) : (
+                    <>
+                      {protocol === "HTTPS" ? "https://" : "http://"}
+                      <span className="text-[#00dce6] font-bold">
+                        {ip || "192.168.1.x"}
+                      </span>
+                      :
+                      <span className="text-tertiary-fixed-dim">{port || "8080"}</span>
+                      <span className="text-on-surface-variant">{cleanHealthcheck}</span>
+                    </>
+                  )}
                 </span>
               </div>
             </section>

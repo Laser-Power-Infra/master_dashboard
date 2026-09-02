@@ -4,6 +4,7 @@ import {
   CATEGORY_ENUM,
   PROTOCOL_ENUM,
 } from "@/lib/service-mapper";
+import { parsePublicUrl } from "@/types/service";
 
 export async function GET() {
   const services = await prisma.service.findMany({
@@ -18,22 +19,26 @@ export async function POST(request: Request) {
 
   const name = String(body.name ?? "").trim();
   const rawIp = String(body.ip ?? "").trim();
-  const ip = rawIp.toLowerCase() === "null" || rawIp === "" ? "" : rawIp;
-  const port = Number(body.port);
-  const category = CATEGORY_ENUM[String(body.category ?? "")];
-  const protocol = PROTOCOL_ENUM[String(body.protocol ?? "HTTP")] ?? "HTTP";
+  const rawBase = body.baseUrl ? String(body.baseUrl).trim() : "";
+  const derived = rawBase ? parsePublicUrl(rawBase) : null;
 
-  if (!name || !ip || ip.toLowerCase() === "null" || !Number.isInteger(port) || port <= 0 || !category) {
+  const ip = derived ? derived.ip : rawIp.toLowerCase() === "null" ? "" : rawIp;
+  const port = derived ? derived.port : Number(body.port);
+  const category = CATEGORY_ENUM[String(body.category ?? "")];
+  const protocol = derived
+    ? (PROTOCOL_ENUM[derived.protocol] ?? "HTTPS")
+    : (PROTOCOL_ENUM[String(body.protocol ?? "HTTP")] ?? "HTTP");
+
+  if (!name || (!ip && !derived) || ip.toLowerCase() === "null" || !Number.isInteger(port) || port <= 0 || !category) {
     return Response.json(
-      { error: "name, ip (valid LAN IP/host, not 'null'), a valid port, and a valid category are required" },
+      { error: "name, a valid ip or public URL, a valid port, and a valid category are required" },
       { status: 400 }
     );
   }
   // Sanitize healthcheck: strip stray "/null" segments that create .../null/api/health
   const rawHealth = body.healthcheck ? String(body.healthcheck).trim() : "/api/health";
   const healthcheck = rawHealth.replace(/\/null/g, "") || "/api/health";
-  const rawBase = body.baseUrl ? String(body.baseUrl).trim() : null;
-  const baseUrl = rawBase && rawBase.toLowerCase() !== "null" ? rawBase.replace(/\/null/g, "") : null;
+  const baseUrl = derived ? derived.baseUrl : rawBase && rawBase.toLowerCase() !== "null" ? rawBase.replace(/\/null/g, "") : null;
 
   const tagNames = Array.isArray(body.tags)
     ? body.tags.map((t: unknown) => String(t).trim()).filter(Boolean)
