@@ -20,9 +20,12 @@ export async function PATCH(
 
   const data: Record<string, unknown> = {};
 
+  const rawBaseUrlForCheck =
+    body.baseUrl == null ? "" : String(body.baseUrl).trim();
   const hasPublicUrl =
     body.baseUrl !== undefined &&
-    String(body.baseUrl ?? "").trim() !== "";
+    rawBaseUrlForCheck !== "" &&
+    rawBaseUrlForCheck.toLowerCase() !== "null";
 
   if (body.name !== undefined) data.name = String(body.name).trim();
   if (body.ip !== undefined && !hasPublicUrl) {
@@ -52,8 +55,8 @@ export async function PATCH(
     data.healthcheck = raw;
   }
   if (body.baseUrl !== undefined) {
-    const raw = String(body.baseUrl).trim();
-    if (raw) {
+    const raw = body.baseUrl == null ? "" : String(body.baseUrl).trim();
+    if (raw && raw.toLowerCase() !== "null") {
       const derived = parsePublicUrl(raw);
       if (!derived) {
         return Response.json({ error: "Invalid public URL" }, { status: 400 });

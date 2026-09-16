@@ -75,7 +75,10 @@ export default function DeployModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      window.alert("Service name is required");
+      return;
+    }
 
     let numericPort = Number(port);
     let cleanIp = ip.trim();
@@ -93,8 +96,14 @@ export default function DeployModal({
       cleanProtocol = derived.protocol;
       cleanBaseUrl = derived.baseUrl;
     } else {
-      if (!cleanIp) return;
-      if (!Number.isInteger(numericPort) || numericPort <= 0 || numericPort > 65535) return;
+      if (!cleanIp) {
+        window.alert("IP Address is required for LAN services");
+        return;
+      }
+      if (!Number.isInteger(numericPort) || numericPort <= 0 || numericPort > 65535) {
+        window.alert("Enter a valid port (1-65535)");
+        return;
+      }
       cleanBaseUrl = "";
     }
 
