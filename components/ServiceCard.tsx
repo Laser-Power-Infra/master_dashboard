@@ -1,7 +1,44 @@
 "use client";
 
 import React from "react";
+import GithubIcon from "@/components/GithubIcon";
+import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 import { ServiceItem, deriveDisplayStatus, buildBaseUrl, getCompany, displayAddress } from "@/types/service";
+
+interface RepoLinkProps {
+  /** Already normalized by the caller — this component never re-parses. */
+  href?: string | null;
+  kind: "repo" | "worker";
+  hoverClass: string;
+  iconClass: string;
+}
+
+/** Renders nothing when no repo URL is set, so existing rows stay clean. */
+function RepoLink({ href, kind, hoverClass, iconClass }: RepoLinkProps) {
+  if (!href) return null;
+
+  const isWorker = kind === "worker";
+  const slug = repoSlug(href);
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={isWorker ? `Worker code: ${slug}` : `Source code: ${slug}`}
+      className={`text-outline ${hoverClass} transition-colors p-1 ${
+        isWorker ? "relative inline-block" : ""
+      }`}
+    >
+      <GithubIcon className={iconClass} />
+      {isWorker && (
+        <span className="absolute bottom-0 right-0 font-mono text-[7px] leading-none text-[#00dce6]">
+          W
+        </span>
+      )}
+    </a>
+  );
+}
 
 interface ServiceCardProps {
   service: ServiceItem;
@@ -46,6 +83,12 @@ export default function ServiceCard({
       : "--";
 
   const sparkData = service.history.map((h) => h.latencyMs ?? 0);
+
+  // Source control links, normalized once and reused for the render.
+  // Footer rows are justify-between, so spacing self-adjusts to the icon count —
+  // no explicit gap classes needed.
+  const repoHref = normalizeRepoUrl(service.repoUrl);
+  const workerRepoHref = normalizeRepoUrl(service.workerRepoUrl);
 
   // Large Hero Card
   if (service.isLarge) {
@@ -114,22 +157,32 @@ export default function ServiceCard({
         </div>
 
         <div className="flex justify-between items-center border-t border-outline-variant/30 pt-3 mt-auto">
-          <div className="flex items-center gap-2 md:gap-3">
-            <button
-              onClick={() => onQuickPeek(service)}
-              className="text-on-surface-variant hover:text-[#00dce6] transition-colors flex items-center gap-1 font-mono text-[12px] cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">visibility</span>
-              <span>Quick Peek</span>
-            </button>
-            {/* <button
-              onClick={() => onQuickPeek(service)}
-              title="Show QR / Network Info"
-              className="text-on-surface-variant hover:text-[#00dce6] transition-colors flex items-center gap-1 font-mono text-[12px] cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">qr_code</span>
-            </button> */}
-          </div>
+          <button
+            onClick={() => onQuickPeek(service)}
+            className="text-on-surface-variant hover:text-[#00dce6] transition-colors flex items-center gap-1 font-mono text-[12px] cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+            <span>Quick Peek</span>
+          </button>
+          <RepoLink
+            href={repoHref}
+            kind="repo"
+            hoverClass="hover:text-[#00dce6]"
+            iconClass="w-[18px] h-[18px]"
+          />
+          <RepoLink
+            href={workerRepoHref}
+            kind="worker"
+            hoverClass="hover:text-[#00dce6]"
+            iconClass="w-[18px] h-[18px]"
+          />
+          {/* <button
+            onClick={() => onQuickPeek(service)}
+            title="Show QR / Network Info"
+            className="text-on-surface-variant hover:text-[#00dce6] transition-colors flex items-center gap-1 font-mono text-[12px] cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">qr_code</span>
+          </button> */}
 
           <button
             onClick={() =>
@@ -189,6 +242,18 @@ export default function ServiceCard({
               <span className="material-symbols-outlined text-[16px]">visibility</span>
               <span>Diagnostics</span>
             </button>
+            <RepoLink
+              href={repoHref}
+              kind="repo"
+              hoverClass="hover:text-error"
+              iconClass="w-[18px] h-[18px]"
+            />
+            <RepoLink
+              href={workerRepoHref}
+              kind="worker"
+              hoverClass="hover:text-error"
+              iconClass="w-[18px] h-[18px]"
+            />
             <button
               onClick={() => (onRestart ? onRestart(service) : null)}
               className="text-error font-mono text-[12px] hover:underline flex items-center gap-1 cursor-pointer"
@@ -266,22 +331,32 @@ export default function ServiceCard({
           >
             {latencyLabel}
           </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onQuickPeek(service)}
-              className="text-on-surface-variant hover:text-[#00dce6] transition-colors p-1"
-              title="Quick Peek"
-            >
-              <span className="material-symbols-outlined text-[16px]">visibility</span>
-            </button>
-            {/* <button
-              onClick={() => onQuickPeek(service)}
-              className="text-on-surface-variant hover:text-[#00dce6] transition-colors p-1"
-              title="QR / Endpoint"
-            >
-              <span className="material-symbols-outlined text-[16px]">qr_code</span>
-            </button> */}
-          </div>
+          <button
+            onClick={() => onQuickPeek(service)}
+            className="text-on-surface-variant hover:text-[#00dce6] transition-colors p-1"
+            title="Quick Peek"
+          >
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+          </button>
+          <RepoLink
+            href={repoHref}
+            kind="repo"
+            hoverClass="hover:text-[#00dce6]"
+            iconClass="w-[18px] h-[18px]"
+          />
+          <RepoLink
+            href={workerRepoHref}
+            kind="worker"
+            hoverClass="hover:text-[#00dce6]"
+            iconClass="w-[18px] h-[18px]"
+          />
+          {/* <button
+            onClick={() => onQuickPeek(service)}
+            className="text-on-surface-variant hover:text-[#00dce6] transition-colors p-1"
+            title="QR / Endpoint"
+          >
+            <span className="material-symbols-outlined text-[16px]">qr_code</span>
+          </button> */}
           <button
             onClick={() =>
               onLaunch ? onLaunch(service) : window.open(buildBaseUrl(service), "_blank")

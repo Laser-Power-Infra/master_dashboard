@@ -10,6 +10,7 @@ import {
   parsePublicUrl,
 } from "@/types/service";
 import type { ServiceInput } from "@/hooks/useServices";
+import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 
 interface DeployModalProps {
   isOpen: boolean;
@@ -47,6 +48,10 @@ export default function DeployModal({
   );
   const [healthcheck, setHealthcheck] = useState(editingService?.healthcheck ?? "/api/health");
   const [baseUrl, setBaseUrl] = useState(editingBaseUrl);
+  const [repoUrl, setRepoUrl] = useState(editingService?.repoUrl ?? "");
+  const [workerRepoUrl, setWorkerRepoUrl] = useState(
+    editingService?.workerRepoUrl ?? ""
+  );
   const [description, setDescription] = useState(editingService?.description ?? "");
   const [tagsInput, setTagsInput] = useState(
     editingService?.tags
@@ -73,6 +78,19 @@ export default function DeployModal({
 
   const cleanHealthcheck = healthcheck.trim() || "/api/health";
 
+  const trimmedRepo = repoUrl.trim();
+  const trimmedWorkerRepo = workerRepoUrl.trim();
+  const cleanRepoUrl = normalizeRepoUrl(trimmedRepo);
+  const cleanWorkerRepoUrl = normalizeRepoUrl(trimmedWorkerRepo);
+  const repoError =
+    trimmedRepo && !cleanRepoUrl
+      ? "Not a github.com/owner/repo URL"
+      : null;
+  const workerRepoError =
+    trimmedWorkerRepo && !cleanWorkerRepoUrl
+      ? "Not a github.com/owner/repo URL"
+      : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -84,6 +102,15 @@ export default function DeployModal({
     let cleanIp = ip.trim();
     let cleanProtocol = protocol;
     let cleanBaseUrl = baseUrl.trim();
+
+    if (trimmedRepo && !cleanRepoUrl) {
+      window.alert("Repository URL must look like github.com/org/repo");
+      return;
+    }
+    if (trimmedWorkerRepo && !cleanWorkerRepoUrl) {
+      window.alert("Worker Repository URL must look like github.com/org/repo");
+      return;
+    }
 
     if (isPublic) {
       const derived = parsePublicUrl(cleanBaseUrl);
@@ -123,6 +150,8 @@ export default function DeployModal({
         protocol: cleanProtocol,
         healthcheck: cleanHealthcheck || null,
         baseUrl: cleanBaseUrl || null,
+        repoUrl: cleanRepoUrl,
+        workerRepoUrl: cleanWorkerRepoUrl,
         description: description.trim() || null,
         tags: allTags.length > 0 ? allTags : [],
         isLarge,
@@ -394,6 +423,64 @@ export default function DeployModal({
                 </div>
               </section>
             </div>
+
+            {/* Source Control */}
+            <section className="bento-card p-4 rounded-lg flex flex-col gap-3">
+              <header className="flex justify-between items-start">
+                <span className="font-mono text-[10px] text-[#00dce6] tracking-widest uppercase font-bold">
+                  SOURCE CONTROL
+                </span>
+                <span className="material-symbols-outlined text-outline text-sm">
+                  code_blocks
+                </span>
+              </header>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] uppercase text-on-surface-variant">
+                    Repository URL
+                  </label>
+                  <input
+                    className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
+                    placeholder="github.com/org/repo"
+                    type="text"
+                    value={repoUrl}
+                    onChange={(e) => setRepoUrl(e.target.value)}
+                  />
+                  {repoError ? (
+                    <p className="font-mono text-[10px] text-error">{repoError}</p>
+                  ) : (
+                    <p className="font-mono text-[10px] text-outline truncate">
+                      {cleanRepoUrl
+                        ? `→ ${repoSlug(cleanRepoUrl)}`
+                        : "Cards show a GitHub button when set."}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[10px] uppercase text-on-surface-variant">
+                    Worker Repository URL
+                  </label>
+                  <input
+                    className="hud-input w-full font-mono text-[12px] px-0 py-2 placeholder-outline/50"
+                    placeholder="github.com/org/repo-workers"
+                    type="text"
+                    value={workerRepoUrl}
+                    onChange={(e) => setWorkerRepoUrl(e.target.value)}
+                  />
+                  {workerRepoError ? (
+                    <p className="font-mono text-[10px] text-error">
+                      {workerRepoError}
+                    </p>
+                  ) : (
+                    <p className="font-mono text-[10px] text-outline truncate">
+                      {cleanWorkerRepoUrl
+                        ? `→ ${repoSlug(cleanWorkerRepoUrl)}`
+                        : "Optional — adds a second, W-marked button."}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
 
             {/* Layout Preference */}
             <section className="bento-card p-4 rounded-lg flex flex-col gap-3">

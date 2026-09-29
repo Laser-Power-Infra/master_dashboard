@@ -5,6 +5,7 @@ import {
   type Service as DbService,
   type HealthCheck as DbHealthCheck,
 } from "@/lib/generated/prisma/client";
+import { normalizeRepoUrl } from "@/lib/repo-url";
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   [Category.CORE_INFRASTRUCTURE]: "Core Infrastructure",
@@ -48,6 +49,8 @@ export interface ServiceView {
   protocol: string;
   healthcheck?: string | null;
   baseUrl?: string | null;
+  repoUrl?: string | null;
+  workerRepoUrl?: string | null;
   tags: string[];
   isLarge: boolean;
   enabled: boolean;
@@ -75,6 +78,9 @@ export function toServiceView(service: ServiceWithTags): ServiceView {
     protocol: PROTOCOL_LABELS[service.protocol],
     healthcheck: (service.healthcheck || "/api/health").replace(/\/null/g, "") || "/api/health",
     baseUrl: service.baseUrl ? service.baseUrl.replace(/\/null/g, "") : null,
+    // Re-normalize on read so legacy or hand-edited rows can never emit an unsafe href.
+    repoUrl: normalizeRepoUrl(service.repoUrl),
+    workerRepoUrl: normalizeRepoUrl(service.workerRepoUrl),
     tags: service.tags.map((t) => t.name),
     isLarge: service.isLarge,
     enabled: service.enabled,

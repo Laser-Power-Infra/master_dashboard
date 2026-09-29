@@ -73,6 +73,8 @@ export interface ServiceItem {
   protocol: string;
   healthcheck?: string | null;
   baseUrl?: string | null;
+  repoUrl?: string | null;
+  workerRepoUrl?: string | null;
   tags: string[];
   isLarge: boolean;
   enabled: boolean;

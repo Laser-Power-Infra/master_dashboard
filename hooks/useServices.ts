@@ -10,6 +10,8 @@ export interface ServiceInput {
   description?: string | null;
   healthcheck?: string | null;
   baseUrl?: string | null;
+  repoUrl?: string | null;
+  workerRepoUrl?: string | null;
   tags: string[];
   isLarge: boolean;
 }

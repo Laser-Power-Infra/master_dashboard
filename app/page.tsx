@@ -4,11 +4,13 @@ import React, { useState, useMemo, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopNav from "@/components/TopNav";
 import ServiceCard from "@/components/ServiceCard";
+import GithubIcon from "@/components/GithubIcon";
 import DeployModal from "@/components/DeployModal";
 import QuickPeekModal from "@/components/QuickPeekModal";
 import { useServices, type ServiceInput } from "@/hooks/useServices";
 import { useServiceHealth, type HealthState } from "@/hooks/useServiceHealth";
 import { deriveDisplayStatus, buildBaseUrl, COMPANIES, SERVICE_TAGS, getCompany, getCommonTag, displayAddress, type ServiceItem } from "@/types/service";
+import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 
 const COMPANY_FILTERS = ["All", ...SERVICE_TAGS, ...COMPANIES];
 
@@ -317,6 +319,8 @@ export default function NexusPortDashboard() {
                       ) : (
                         liveServices.map((svc) => {
                           const status = deriveDisplayStatus(svc);
+                          const repoHref = normalizeRepoUrl(svc.repoUrl);
+                          const workerRepoHref = normalizeRepoUrl(svc.workerRepoUrl);
                           return (
                             <div key={svc.id} className="py-3 flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -360,6 +364,28 @@ export default function NexusPortDashboard() {
                                     visibility
                                   </span>
                                 </button>
+                                {repoHref && (
+                                  <a
+                                    href={repoHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={`Source code: ${repoSlug(repoHref)}`}
+                                    className="text-outline hover:text-[#00dce6] transition-colors"
+                                  >
+                                    <GithubIcon className="w-[18px] h-[18px] block" />
+                                  </a>
+                                )}
+                                {workerRepoHref && (
+                                  <a
+                                    href={workerRepoHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={`Worker code: ${repoSlug(workerRepoHref)}`}
+                                    className="text-outline hover:text-[#00dce6] transition-colors"
+                                  >
+                                    <GithubIcon className="w-[18px] h-[18px] block" />
+                                  </a>
+                                )}
                               </div>
                             </div>
                           );

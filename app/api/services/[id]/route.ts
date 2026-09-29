@@ -5,6 +5,7 @@ import {
   PROTOCOL_ENUM,
 } from "@/lib/service-mapper";
 import { parsePublicUrl } from "@/types/service";
+import { normalizeRepoUrl } from "@/lib/repo-url";
 
 export async function PATCH(
   request: Request,
@@ -84,6 +85,19 @@ export async function PATCH(
   }
   if (body.isLarge !== undefined) data.isLarge = Boolean(body.isLarge);
   if (body.enabled !== undefined) data.enabled = Boolean(body.enabled);
+
+  for (const key of ["repoUrl", "workerRepoUrl"] as const) {
+    if (body[key] === undefined) continue;
+    const raw = body[key] == null ? "" : String(body[key]).trim();
+    const normalized = normalizeRepoUrl(raw);
+    if (raw && !normalized) {
+      return Response.json(
+        { error: `${key} must be a github.com/owner/repo URL` },
+        { status: 400 }
+      );
+    }
+    data[key] = normalized;
+  }
 
   if (body.tags !== undefined) {
     const tagNames = Array.isArray(body.tags)

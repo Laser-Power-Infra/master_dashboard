@@ -5,6 +5,7 @@ import {
   PROTOCOL_ENUM,
 } from "@/lib/service-mapper";
 import { parsePublicUrl } from "@/types/service";
+import { normalizeRepoUrl } from "@/lib/repo-url";
 
 export async function GET() {
   const services = await prisma.service.findMany({
@@ -44,6 +45,25 @@ export async function POST(request: Request) {
     ? body.tags.map((t: unknown) => String(t).trim()).filter(Boolean)
     : [];
 
+  const rawRepo = body.repoUrl == null ? "" : String(body.repoUrl).trim();
+  const repoUrl = normalizeRepoUrl(rawRepo);
+  if (rawRepo && !repoUrl) {
+    return Response.json(
+      { error: "repoUrl must be a github.com/owner/repo URL" },
+      { status: 400 }
+    );
+  }
+
+  const rawWorkerRepo =
+    body.workerRepoUrl == null ? "" : String(body.workerRepoUrl).trim();
+  const workerRepoUrl = normalizeRepoUrl(rawWorkerRepo);
+  if (rawWorkerRepo && !workerRepoUrl) {
+    return Response.json(
+      { error: "workerRepoUrl must be a github.com/owner/repo URL" },
+      { status: 400 }
+    );
+  }
+
   const service = await prisma.service.create({
     data: {
       name,
@@ -54,6 +74,8 @@ export async function POST(request: Request) {
       description: body.description ? String(body.description).trim() : null,
       healthcheck,
       baseUrl,
+      repoUrl,
+      workerRepoUrl,
       isLarge: Boolean(body.isLarge),
       tags: {
         connectOrCreate: tagNames.map((t: string) => ({

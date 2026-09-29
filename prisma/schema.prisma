@@ -21,7 +21,10 @@ model Service {
   protocol    Protocol @default(HTTP)
   healthcheck String?
   baseUrl     String?
-  tags        Tag[]
+  // Source control links — normalized to https://github.com/owner/repo
+  repoUrl       String?
+  workerRepoUrl String?
+  tags          Tag[]
   isLarge     Boolean  @default(false)
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
