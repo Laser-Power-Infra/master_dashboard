@@ -97,7 +97,7 @@ export default function NexusPortDashboard() {
   );
 
   const onlineCount = useMemo(
-    () => liveServices.filter((s) => deriveDisplayStatus(s) === "online").length,
+    () => liveServices.filter((s) => ["online", "warning"].includes(deriveDisplayStatus(s))).length,
     [liveServices]
   );
   const totalCount = services.length;
@@ -232,7 +232,7 @@ export default function NexusPortDashboard() {
               {activeTab === "dashboard" && (
                 <>
                   <div className="flex overflow-x-auto gap-2.5 pb-4 mb-6 hide-scrollbar border-b border-outline-variant/30">
-                    {COMPANY_FILTERS.map((filter) => {
+                    {COMPANY_FILTERS.filter((f) => f === "All" || companyCounts[f]).map((filter) => {
                       const count = companyCounts[filter] || 0;
                       const isSelected = selectedFilter === filter;
                       return (
@@ -408,7 +408,7 @@ export default function NexusPortDashboard() {
                         {totalCount} Active
                       </span>
                       <p className="text-[12px] text-outline mt-1">
-                        {onlineCount} online, {totalCount - onlineCount} offline
+                        {onlineCount} up, {totalCount - onlineCount} offline
                       </p>
                     </div>
                     <div className="bento-card p-4 rounded-lg">

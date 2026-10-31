@@ -32,12 +32,15 @@ export async function GET(
   try {
     const res = await fetch(pingUrl, {
       cache: "no-store",
+      redirect: "manual", // sign-in redirects mean the app is up
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
     const latencyMs = Math.round(performance.now() - start);
 
-    if (!res.ok) {
+    // 3xx and 401/403 = reachable (auth-protected apps)
+    const up = res.ok || (res.status >= 300 && res.status < 400) || res.status === 401 || res.status === 403;
+    if (!up) {
       return Response.json({
         status: "OFFLINE",
         latencyMs: null,

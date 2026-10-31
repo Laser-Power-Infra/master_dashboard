@@ -40,7 +40,7 @@ export default function TopNav({
           <div className="flex items-center gap-2 bg-[#34343a]/50 rounded-full px-3 py-1 border border-outline-variant/30">
             <div className="w-2 h-2 rounded-full bg-[#4edea3] status-ring-pulse" />
             <span className="font-mono text-[12px] text-on-surface-variant">
-              {onlineCount}/{totalCount} Online
+              {onlineCount}/{totalCount} up
             </span>
           </div>
 

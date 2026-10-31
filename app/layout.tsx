@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
+import "material-symbols/outlined.css";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,12 +37,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
     >
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-        />
-      </head>
+
       <body className="min-h-screen bg-[#090a0f] text-[#e3e1e9] flex flex-col selection:bg-primary-container/30 selection:text-primary">
         {children}
       </body>
