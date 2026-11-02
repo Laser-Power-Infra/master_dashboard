@@ -1,10 +1,8 @@
 # Flask (Python)
 # Add to app.py. The dashboard pings GET http://<ip>:<port>/api/health every 30s.
 from flask import Flask, jsonify
-import time
 
 app = Flask(__name__)
-START_TIME = time.time()
 
 
 @app.route("/api/health")
@@ -12,8 +10,9 @@ def health():
     resp = jsonify(
         {
             "status": "ok",
-            "uptime": round(time.time() - START_TIME, 2),
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            # ISO time of your last successful data sync (None if unknown); the portal alerts when it is too old
+            "lastSync": None,
+            "dependencies": {},  # e.g. {"db": "ok", "gmail": "ok"}
         }
     )
     resp.headers["Cache-Control"] = "no-store"

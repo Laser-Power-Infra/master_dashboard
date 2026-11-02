@@ -24,10 +24,15 @@ All variants return the same JSON shape:
 ```json
 {
   "status": "ok",
-  "uptime": 123.45,
-  "timestamp": "2026-08-25T10:00:00Z"
+  "lastSync": "2026-08-25T10:00:00Z",
+  "dependencies": { "db": "ok" }
 }
 ```
+
+`lastSync` (optional, ISO string or `null`) is when the app last refreshed its
+data. The portal's alert run reads it from 2xx JSON responses and raises a
+`stale` alert when it is older than the service's `ALERT_STALE_HOURS_JSON`
+threshold (default 24 h). Omit it or send `null` to opt out.
 
 ## Why this endpoint
 

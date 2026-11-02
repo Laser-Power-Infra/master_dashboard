@@ -6,8 +6,9 @@ export async function GET() {
   return Response.json(
     {
       status: "ok",
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
+      // ISO time of your last successful data sync (null if unknown); the portal alerts when it is too old
+      lastSync: null,
+      dependencies: {}, // e.g. { db: "ok", gmail: "ok" }
     },
     {
       headers: {

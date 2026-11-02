@@ -4,6 +4,7 @@ import React from "react";
 import GithubIcon from "@/components/GithubIcon";
 import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 import { ServiceItem, deriveDisplayStatus, buildBaseUrl, getCompany, displayAddress } from "@/types/service";
+import type { ServiceAlert } from "@/hooks/useAlerts";
 
 interface RepoLinkProps {
   /** Already normalized by the caller — this component never re-parses. */
@@ -46,6 +47,7 @@ interface ServiceCardProps {
   onEdit: (service: ServiceItem) => void;
   onRestart?: (service: ServiceItem) => void;
   onLaunch?: (service: ServiceItem) => void;
+  alerts?: ServiceAlert[];
 }
 
 export default function ServiceCard({
@@ -54,7 +56,18 @@ export default function ServiceCard({
   onEdit,
   onRestart,
   onLaunch,
+  alerts,
 }: ServiceCardProps) {
+  const alertBadge = alerts && alerts.length > 0 && (
+    <span
+      title={alerts.map((a) => `${a.kind} since ${new Date(a.since).toLocaleString()}`).join("\n")}
+      className="shrink-0 flex items-center gap-0.5 bg-error/15 text-error px-1.5 py-0.5 rounded-xs font-mono text-[9px] border border-error/40 uppercase tracking-wider"
+    >
+      <span className="material-symbols-outlined text-[12px]">notifications_active</span>
+      {[...new Set(alerts.map((a) => a.kind))].join(" · ")}
+    </span>
+  );
+
   const displayStatus = deriveDisplayStatus(service);
   const isOnline = displayStatus === "online";
   const isWarning = displayStatus === "warning";
@@ -102,6 +115,7 @@ export default function ServiceCard({
             <h3 className="text-[20px] font-bold text-[#e3e1e9] tracking-tight group-hover:text-primary-fixed transition-colors">
               {service.name}
             </h3>
+            {alertBadge}
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -208,6 +222,7 @@ export default function ServiceCard({
             <h3 className="text-[14px] font-bold text-[#e3e1e9] truncate" title={service.name}>
               {service.name}
             </h3>
+            {alertBadge}
           </div>
           <button
             onClick={() => onEdit(service)}
@@ -282,6 +297,7 @@ export default function ServiceCard({
           <h3 className="text-[14px] font-bold text-[#e3e1e9] truncate" title={service.name}>
             {service.name}
           </h3>
+          {alertBadge}
         </div>
         <button
           onClick={() => onEdit(service)}

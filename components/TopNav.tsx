@@ -2,9 +2,14 @@
 
 import React from "react";
 
+export type StatusFilter = "up" | "offline" | null;
+
 interface TopNavProps {
   onlineCount: number;
+  offlineCount: number;
   totalCount: number;
+  statusFilter: StatusFilter;
+  onStatusFilter: (f: StatusFilter) => void;
   avgLatency?: string;
   onOpenDeployModal: () => void;
   onOpenMobileMenu: () => void;
@@ -14,7 +19,10 @@ interface TopNavProps {
 
 export default function TopNav({
   onlineCount,
+  offlineCount,
   totalCount,
+  statusFilter,
+  onStatusFilter,
   avgLatency = "14ms",
   onOpenDeployModal,
   onOpenMobileMenu,
@@ -37,12 +45,37 @@ export default function TopNav({
         <div className="flex items-center gap-3 md:gap-4">
           
 
-          <div className="flex items-center gap-2 bg-[#34343a]/50 rounded-full px-3 py-1 border border-outline-variant/30">
+          <button
+            onClick={() => onStatusFilter(statusFilter === "up" ? null : "up")}
+            aria-pressed={statusFilter === "up"}
+            title="Show only services that are up (click again to clear)"
+            className={`flex items-center gap-2 rounded-full px-3 py-1 border cursor-pointer transition-colors ${
+              statusFilter === "up"
+                ? "bg-[#4edea3]/15 border-[#4edea3]"
+                : "bg-[#34343a]/50 border-outline-variant/30 hover:border-outline"
+            }`}
+          >
             <div className="w-2 h-2 rounded-full bg-[#4edea3] status-ring-pulse" />
             <span className="font-mono text-[12px] text-on-surface-variant">
               {onlineCount}/{totalCount} up
             </span>
-          </div>
+          </button>
+
+          <button
+            onClick={() => onStatusFilter(statusFilter === "offline" ? null : "offline")}
+            aria-pressed={statusFilter === "offline"}
+            title="Show only offline services (click again to clear)"
+            className={`flex items-center gap-2 rounded-full px-3 py-1 border cursor-pointer transition-colors ${
+              statusFilter === "offline"
+                ? "bg-error/15 border-error"
+                : "bg-[#34343a]/50 border-outline-variant/30 hover:border-outline"
+            }`}
+          >
+            <div className="w-2 h-2 rounded-full bg-error" />
+            <span className="font-mono text-[12px] text-on-surface-variant">
+              {offlineCount} down
+            </span>
+          </button>
 
           <div className="hidden sm:flex items-center gap-2 bg-[#34343a]/50 rounded-full px-3 py-1 border border-outline-variant/30">
             <span className="material-symbols-outlined text-[14px] text-[#00dce6]">sensors</span>
@@ -61,7 +94,8 @@ export default function TopNav({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search service..."
+            placeholder="Search name, tag, address..."
+            aria-label="Search services"
             className="w-full bg-surface-container/70 border border-outline-variant/40 rounded-sm pl-8 pr-3 py-1 font-mono text-[12px] text-[#e3e1e9] placeholder-outline focus:outline-none focus:border-primary-container/60 focus:bg-surface-container"
           />
           {searchQuery && (
@@ -97,12 +131,6 @@ export default function TopNav({
           >
             <span className="material-symbols-outlined text-[20px]">memory</span>
           </button> */}
-          <button
-            title="User Profile & Security Keys"
-            className="p-1.5 md:p-2 hover:bg-primary-container/10 hover:text-primary-fixed transition-colors rounded-xs cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">account_circle</span>
-          </button>
         </div>
       </div>
     </header>

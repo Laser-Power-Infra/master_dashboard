@@ -2,20 +2,37 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
-import TopNav from "@/components/TopNav";
+import TopNav, { type StatusFilter } from "@/components/TopNav";
 import ServiceCard from "@/components/ServiceCard";
 import GithubIcon from "@/components/GithubIcon";
 import DeployModal from "@/components/DeployModal";
 import QuickPeekModal from "@/components/QuickPeekModal";
 import { useServices, type ServiceInput } from "@/hooks/useServices";
 import { useServiceHealth, type HealthState } from "@/hooks/useServiceHealth";
+import { useAlerts, type ServiceAlert } from "@/hooks/useAlerts";
 import { deriveDisplayStatus, buildBaseUrl, COMPANIES, SERVICE_TAGS, getCompany, getCommonTag, displayAddress, type ServiceItem } from "@/types/service";
 import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 
 const COMPANY_FILTERS = ["All", ...SERVICE_TAGS, ...COMPANIES];
 
+type SortKey = "name" | "status" | "latency";
+const SORT_STORAGE_KEY = "portal.sort";
+const STATUS_RANK = { online: 0, warning: 1, checking: 2, offline: 3 } as const;
+
+function loadSort(): { key: SortKey; dir: "asc" | "desc" } {
+  try {
+    // window guard: Node 22+ exposes its own localStorage global during SSR and warns on access
+    const s = typeof window === "undefined" ? null : JSON.parse(localStorage.getItem(SORT_STORAGE_KEY) || "null");
+    if (["name", "status", "latency"].includes(s?.key) && ["asc", "desc"].includes(s?.dir)) return s;
+  } catch {
+    // no storage (SSR, private mode) or bad JSON: fall back to default
+  }
+  return { key: "name", dir: "asc" };
+}
+
 interface LiveServiceCardProps {
   service: ServiceItem;
+  alerts?: ServiceAlert[];
   restartSignal: number;
   onQuickPeek: (s: ServiceItem) => void;
   onEdit: (s: ServiceItem) => void;
@@ -26,6 +43,7 @@ interface LiveServiceCardProps {
 
 function LiveServiceCard({
   service,
+  alerts,
   restartSignal,
   onQuickPeek,
   onEdit,
@@ -43,6 +61,7 @@ function LiveServiceCard({
   return (
     <ServiceCard
       service={liveService}
+      alerts={alerts}
       onQuickPeek={onQuickPeek}
       onEdit={onEdit}
       onRestart={onRestart}
@@ -65,6 +84,18 @@ export default function NexusPortDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(null);
+  // Safe as a lazy initializer: the sort UI only renders after services load, so no hydration mismatch.
+  const [sort, setSortState] = useState(loadSort);
+  const setSort = (next: typeof sort) => {
+    setSortState(next);
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // storage unavailable: keep in-memory choice only
+    }
+  };
+  const alerts = useAlerts();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [restartSignals, setRestartSignals] = useState<Record<string, number>>({});
   const [healthMap, setHealthMap] = useState<Record<string, HealthState>>({});
@@ -100,6 +131,10 @@ export default function NexusPortDashboard() {
     () => liveServices.filter((s) => ["online", "warning"].includes(deriveDisplayStatus(s))).length,
     [liveServices]
   );
+  const offlineCount = useMemo(
+    () => liveServices.filter((s) => deriveDisplayStatus(s) === "offline").length,
+    [liveServices]
+  );
   const totalCount = services.length;
 
   const avgLatency = useMemo(() => {
@@ -122,19 +157,42 @@ export default function NexusPortDashboard() {
   }, [services]);
 
   const filteredServices = useMemo(() => {
-    return services.filter((service) => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = liveServices.filter((service) => {
       const matchesCompany =
         selectedFilter === "All" || service.tags.includes(selectedFilter);
-      const q = searchQuery.trim().toLowerCase();
       const matchesSearch =
         !q ||
         service.name.toLowerCase().includes(q) ||
         service.ip.toLowerCase().includes(q) ||
         service.port.toString().includes(q) ||
+        displayAddress(service).toLowerCase().includes(q) ||
         service.tags.some((t) => t.toLowerCase().includes(q));
-      return matchesCompany && matchesSearch;
+      const status = deriveDisplayStatus(service);
+      const matchesStatus =
+        !statusFilter ||
+        (statusFilter === "up" ? status === "online" || status === "warning" : status === "offline");
+      return matchesCompany && matchesSearch && matchesStatus;
     });
-  }, [services, selectedFilter, searchQuery]);
+    const sign = sort.dir === "asc" ? 1 : -1;
+    // Name is the tie-breaker so equal rows keep a stable order between health polls.
+    return filtered.sort((a, b) => {
+      const primary =
+        sort.key === "status"
+          ? STATUS_RANK[deriveDisplayStatus(a)] - STATUS_RANK[deriveDisplayStatus(b)]
+          : sort.key === "latency"
+          ? (a.latency ?? Infinity) - (b.latency ?? Infinity)
+          : 0;
+      return sign * (primary || a.name.localeCompare(b.name)) || a.id.localeCompare(b.id);
+    });
+  }, [liveServices, selectedFilter, searchQuery, statusFilter, sort]);
+
+  const filtersActive = selectedFilter !== "All" || searchQuery.trim() !== "" || statusFilter !== null;
+  const clearFilters = () => {
+    setSelectedFilter("All");
+    setSearchQuery("");
+    setStatusFilter(null);
+  };
 
   const handleSaveService = async (input: ServiceInput) => {
     try {
@@ -199,7 +257,13 @@ export default function NexusPortDashboard() {
       <div className="flex-1 lg:ml-64 flex flex-col pt-16">
         <TopNav
           onlineCount={onlineCount}
+          offlineCount={offlineCount}
           totalCount={totalCount}
+          statusFilter={statusFilter}
+          onStatusFilter={(f) => {
+            setStatusFilter(f);
+            setActiveTab("dashboard");
+          }}
           avgLatency={avgLatency}
           onOpenDeployModal={handleOpenDeploy}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
@@ -251,6 +315,44 @@ export default function NexusPortDashboard() {
                     })}
                   </div>
 
+                  <div className="flex flex-wrap items-center gap-3 mb-4 font-mono text-[12px] text-on-surface-variant">
+                    <span>
+                      {filteredServices.length} of {totalCount} services
+                    </span>
+                    {filtersActive && (
+                      <button
+                        onClick={clearFilters}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-sm border border-outline-variant/40 hover:text-[#e3e1e9] hover:border-outline cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">filter_alt_off</span>
+                        Clear filters
+                      </button>
+                    )}
+                    <div className="ml-auto flex items-center gap-1">
+                      <label htmlFor="portal-sort">Sort</label>
+                      <select
+                        id="portal-sort"
+                        value={sort.key}
+                        onChange={(e) => setSort({ ...sort, key: e.target.value as SortKey })}
+                        className="bg-surface-container/70 border border-outline-variant/40 rounded-sm px-2 py-0.5 text-[#e3e1e9] cursor-pointer"
+                      >
+                        <option value="name">Name</option>
+                        <option value="status">Status</option>
+                        <option value="latency">Latency</option>
+                      </select>
+                      <button
+                        onClick={() => setSort({ ...sort, dir: sort.dir === "asc" ? "desc" : "asc" })}
+                        title={sort.dir === "asc" ? "Ascending (click for descending)" : "Descending (click for ascending)"}
+                        aria-label={`Sort direction: ${sort.dir === "asc" ? "ascending" : "descending"}`}
+                        className="p-0.5 rounded-sm border border-outline-variant/40 hover:text-[#e3e1e9] hover:border-outline cursor-pointer flex"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          {sort.dir === "asc" ? "arrow_upward" : "arrow_downward"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
                   {filteredServices.length === 0 ? (
                     <div className="bento-card p-12 text-center flex flex-col items-center justify-center gap-3">
                       <span className="material-symbols-outlined text-outline text-[48px]">
@@ -263,10 +365,7 @@ export default function NexusPortDashboard() {
                         Try changing your category filter or search query.
                       </p>
                       <button
-                        onClick={() => {
-                          setSelectedFilter("All");
-                          setSearchQuery("");
-                        }}
+                        onClick={clearFilters}
                         className="neon-button font-mono text-[12px] px-4 py-2 rounded mt-2 cursor-pointer"
                       >
                         Reset Filters
@@ -278,6 +377,7 @@ export default function NexusPortDashboard() {
                         <LiveServiceCard
                           key={service.id}
                           service={service}
+                          alerts={alerts[service.id]}
                           restartSignal={restartSignals[service.id] || 0}
                           onQuickPeek={(s) => setQuickPeekService(s)}
                           onEdit={handleEditService}
