@@ -22,7 +22,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Down / slow alerts
 
-`POST /api/alerts/run` (GET also works) probes every enabled service, stores a `HealthCheck` sample per service and notifies only when an alert opens or recovers. `GET /api/alerts` returns the active alerts (`down` / `stale` / `slow`) from stored history without probing.
+`POST /api/alerts/run` (GET also works) probes every enabled service, keeps a sample per service in memory (nothing is written to the database, so history resets on restart) and notifies only when an alert opens or recovers. A service is `down` after 5 consecutive runs with no response. `GET /api/alerts` returns the active alerts (`down` / `stale` / `slow`) from those in-memory samples without probing.
 
 Schedule it on the server with Windows Task Scheduler (every 5 min, plus a daily summary):
 
@@ -36,7 +36,6 @@ Env vars:
 | Var | Default | Meaning |
 | --- | --- | --- |
 | `ALERT_WEBHOOK_URL` | unset | Webhook that receives JSON `{type: "alert"\|"recovery"\|"summary", ...}`. Unset = logged to the server console. |
-| `ALERT_DOWN_MINUTES` | `10` | Minutes of continuous OFFLINE samples before a `down` alert. |
 | `ALERT_STALE_HOURS_JSON` | unset | Per-service data-staleness thresholds in hours, keyed by service name, e.g. `{"News Agent":24,"Email Dashboard":1}`. Unlisted services use 24. |
 
 `stale` = the `lastSync` (ISO string) returned by the service's health JSON is older than its threshold, i.e. the dashboard is up but its data stopped refreshing (see `templates/health-endpoint/`). Services that do not return `lastSync` never go stale. The latest `lastSync` is kept in server memory, so `stale` appears only after the first run following a restart.

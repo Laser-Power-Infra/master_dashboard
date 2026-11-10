@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { probeService } from "@/lib/probe";
 import { WARNING_LATENCY_THRESHOLD_MS } from "@/types/service";
 
-const DOWN_MINUTES = Number(process.env.ALERT_DOWN_MINUTES) || 10;
+const DOWN_SAMPLES = 5; // consecutive probes with no response before a `down` alert
 const DEFAULT_STALE_HOURS = 24;
 const STALE_HOURS: Record<string, number> = (() => {
   try {
@@ -14,8 +14,8 @@ const STALE_HOURS: Record<string, number> = (() => {
 })();
 const staleHoursFor = (name: string) => Number(STALE_HOURS[name]) || DEFAULT_STALE_HOURS;
 const SLOW_SAMPLES = 3;
-// shortcut: only the newest 500 samples per service are read, so `since` of a longer outage is clamped; raise if needed
-const HISTORY_LIMIT = 500;
+// shortcut: only the newest 50 samples per service are kept, so `since` of a longer outage is clamped; raise if needed
+const HISTORY_LIMIT = 50;
 
 export type AlertKind = "down" | "stale" | "slow";
 export interface ActiveAlert {
@@ -36,9 +36,9 @@ export function alertsFor(serviceId: string, samples: Sample[], now: Date): Acti
   if (!latest) return [];
   const out: ActiveAlert[] = [];
 
-  const firstOffline = lastOfLeadingRun(samples, (s) => s.status === "OFFLINE");
-  if (firstOffline && latest.checkedAt.getTime() - firstOffline.checkedAt.getTime() >= DOWN_MINUTES * 60_000) {
-    out.push({ serviceId, kind: "down", since: firstOffline.checkedAt.toISOString() });
+  const isOffline = (s: Sample) => s.status === "OFFLINE";
+  if (samples.length >= DOWN_SAMPLES && samples.slice(0, DOWN_SAMPLES).every(isOffline)) {
+    out.push({ serviceId, kind: "down", since: lastOfLeadingRun(samples, isOffline)!.checkedAt.toISOString() });
   }
 
   const isSlow = (s: Sample) => s.status === "ONLINE" && (s.latencyMs ?? 0) >= WARNING_LATENCY_THRESHOLD_MS;
@@ -54,12 +54,16 @@ export function staleAlert(serviceId: string, lastSync: string | null | undefine
   return now.getTime() - Date.parse(lastSync) >= hours * 3_600_000 ? [{ serviceId, kind: "stale", since: lastSync }] : [];
 }
 
-// shortcut: latest lastSync per service lives in process memory (no schema change), so it is empty until the
-// first /api/alerts/run after a restart, and that first run re-notifies already-stale services; add a
-// lastSync column on HealthCheck (or a small table) if restarts or multiple instances make that noisy.
+// shortcut: probe samples and latest lastSync per service live in process memory (nothing is written to the
+// DB), so both are empty until the first /api/alerts/run after a restart, and that first run re-notifies
+// already-stale services; persist them if restarts or multiple instances make that noisy.
 // globalThis so the run route and GET route share it even when bundled as separate route modules.
-const g = globalThis as unknown as { alertLastSync?: Map<string, string | null> };
+const g = globalThis as unknown as {
+  alertLastSync?: Map<string, string | null>;
+  alertSamples?: Map<string, Sample[]>;
+};
 const lastSyncs = (g.alertLastSync ??= new Map());
+const history = (g.alertSamples ??= new Map()); // newest first
 
 function lastOfLeadingRun<T>(items: T[], pred: (t: T) => boolean): T | undefined {
   let last: T | undefined;
@@ -72,16 +76,7 @@ function lastOfLeadingRun<T>(items: T[], pred: (t: T) => boolean): T | undefined
 
 async function loadHistory() {
   const services = await prisma.service.findMany({ where: { enabled: true } });
-  const histories = await Promise.all(
-    services.map((s) =>
-      prisma.healthCheck.findMany({
-        where: { serviceId: s.id },
-        orderBy: { checkedAt: "desc" },
-        take: HISTORY_LIMIT,
-      })
-    )
-  );
-  return services.map((service, i) => ({ service, samples: histories[i] }));
+  return services.map((service) => ({ service, samples: history.get(service.id) ?? [] }));
 }
 
 export async function getActiveAlerts(now = new Date()): Promise<ActiveAlert[]> {
@@ -120,17 +115,15 @@ async function notify(payload: Record<string, unknown>) {
 
 const key = (a: ActiveAlert) => `${a.serviceId}:${a.kind}`;
 
-/** Probe every enabled service, store a sample each, and notify on alert state changes. */
+/** Probe every enabled service, keep a sample each in memory, and notify on alert state changes. */
 export async function runAlerts({ summary = false } = {}) {
   const runStart = new Date();
   const enabled = await prisma.service.findMany({ where: { enabled: true } });
   const probes = await Promise.all(enabled.map((s) => probeService(s)));
-  await prisma.healthCheck.createMany({
-    data: enabled.map((s, i) => ({
-      serviceId: s.id,
-      status: probes[i].status,
-      latencyMs: probes[i].latencyMs,
-    })),
+  const checkedAt = new Date();
+  enabled.forEach((s, i) => {
+    const sample: Sample = { status: probes[i].status, latencyMs: probes[i].latencyMs, checkedAt };
+    history.set(s.id, [sample, ...(history.get(s.id) ?? [])].slice(0, HISTORY_LIMIT));
   });
   const prevSyncs = new Map(lastSyncs);
   // OFFLINE probes have no lastSync: keep the last known value so a stale alert survives an outage
@@ -143,7 +136,6 @@ export async function runAlerts({ summary = false } = {}) {
   const rows = await loadHistory();
   const names = new Map(rows.map(({ service }) => [service.id, service.name]));
   // "Already notified" = the alert was active before this run's samples / lastSyncs existed.
-  // shortcut: if other writers also persist samples between runs, a transition they cause is not notified; add a notifications table if that happens
   const before = computeAlerts(rows, prevSyncs, runStart, (s) => s.checkedAt < runStart);
   const current = computeAlerts(rows, lastSyncs, now);
 
