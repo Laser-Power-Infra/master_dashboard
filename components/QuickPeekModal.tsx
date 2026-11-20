@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { ServiceItem } from "@/types/service";
 import { deriveDisplayStatus, buildBaseUrl, buildPingUrl, getCompany, displayAddress } from "@/types/service";
+import { remoteUrlFor } from "@/lib/remote-access";
 import { useServiceHealth } from "@/hooks/useServiceHealth";
 
 interface QuickPeekModalProps {
@@ -92,6 +93,18 @@ export default function QuickPeekModal({
               <span className="font-mono text-[11px] text-on-surface-variant uppercase">
                 {getCompany(service) ?? "No Company"} {`//`} {displayAddress(service)} {`//`} {statusLabel}
               </span>
+              {remoteUrlFor(service) && (
+                <a
+                  href={remoteUrlFor(service)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open from outside the office (company email login)"
+                  className="flex items-center gap-1 font-mono text-[11px] text-[#4edea3] hover:underline w-max"
+                >
+                  <span className="material-symbols-outlined text-[13px]">public</span>
+                  {remoteUrlFor(service)}
+                </a>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

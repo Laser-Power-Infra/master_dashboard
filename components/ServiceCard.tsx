@@ -5,6 +5,7 @@ import GithubIcon from "@/components/GithubIcon";
 import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 import { ServiceItem, deriveDisplayStatus, buildBaseUrl, getCompany, displayAddress } from "@/types/service";
 import type { ServiceAlert } from "@/hooks/useAlerts";
+import { remoteUrlFor } from "@/lib/remote-access";
 
 interface RepoLinkProps {
   /** Already normalized by the caller — this component never re-parses. */
@@ -48,6 +49,23 @@ interface ServiceCardProps {
   onRestart?: (service: ServiceItem) => void;
   onLaunch?: (service: ServiceItem) => void;
   alerts?: ServiceAlert[];
+}
+
+// Outside-office link (Cloudflare Access login). Rendered only for dashboards that have one.
+function RemoteLinkChip({ href }: { href: string | null }) {
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open from outside the office (company email login): ${href}`}
+      className="inline-flex items-center gap-1 bg-[#4edea3]/10 text-[#4edea3] hover:bg-[#4edea3]/20 px-2 py-0.5 rounded-xs font-mono text-[12px] border border-[#4edea3]/20 w-max max-w-full truncate transition-colors"
+    >
+      <span className="material-symbols-outlined text-[14px]">public</span>
+      {href.replace(/^https:\/\//, "")}
+    </a>
+  );
 }
 
 export default function ServiceCard({
@@ -102,6 +120,7 @@ export default function ServiceCard({
   // no explicit gap classes needed.
   const repoHref = normalizeRepoUrl(service.repoUrl);
   const workerRepoHref = normalizeRepoUrl(service.workerRepoUrl);
+  const remoteHref = remoteUrlFor(service);
 
   // Large Hero Card
   if (service.isLarge) {
@@ -135,6 +154,7 @@ export default function ServiceCard({
           <span className="bg-primary/10 text-[#00dce6] px-2 py-0.5 rounded-xs font-mono text-[12px] border border-[#00dce6]/20">
             {displayAddress(service)}
           </span>
+          <RemoteLinkChip href={remoteHref} />
           <span className="bg-[#4edea3]/10 text-[#4edea3] px-2 py-0.5 rounded-xs font-mono text-[12px] border border-[#4edea3]/20">
             {service.protocol || "HTTP"}
           </span>
@@ -247,6 +267,11 @@ export default function ServiceCard({
             {getCompany(service) ?? "—"}
           </span>
         </div>
+        {remoteHref && (
+          <div className="-mt-2 mb-4">
+            <RemoteLinkChip href={remoteHref} />
+          </div>
+        )}
 
         <div className="flex-1 flex flex-col justify-end mt-auto">
           <div className="flex justify-between items-center border-t border-error/25 pt-3">
@@ -324,6 +349,11 @@ export default function ServiceCard({
           {getCompany(service) ?? "—"}
         </span>
       </div>
+      {remoteHref && (
+        <div className="-mt-2 mb-4">
+          <RemoteLinkChip href={remoteHref} />
+        </div>
+      )}
 
       {service.tags && service.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">

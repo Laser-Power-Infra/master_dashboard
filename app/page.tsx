@@ -11,6 +11,7 @@ import { useServices, type ServiceInput } from "@/hooks/useServices";
 import { useServiceHealth, type HealthState } from "@/hooks/useServiceHealth";
 import { useAlerts, type ServiceAlert } from "@/hooks/useAlerts";
 import { deriveDisplayStatus, buildBaseUrl, COMPANIES, SERVICE_TAGS, getCompany, getCommonTag, displayAddress, type ServiceItem } from "@/types/service";
+import { remoteUrlFor } from "@/lib/remote-access";
 import { normalizeRepoUrl, repoSlug } from "@/lib/repo-url";
 
 const COMPANY_FILTERS = ["All", ...SERVICE_TAGS, ...COMPANIES];
@@ -167,6 +168,7 @@ export default function NexusPortDashboard() {
         service.ip.toLowerCase().includes(q) ||
         service.port.toString().includes(q) ||
         displayAddress(service).toLowerCase().includes(q) ||
+        (remoteUrlFor(service) ?? "").includes(q) ||
         service.tags.some((t) => t.toLowerCase().includes(q));
       const status = deriveDisplayStatus(service);
       const matchesStatus =
@@ -440,6 +442,17 @@ export default function NexusPortDashboard() {
                                   <span className="text-outline text-[10px] block">
                                     {displayAddress(svc)} • {getCompany(svc) ?? "—"}
                                   </span>
+                                  {remoteUrlFor(svc) && (
+                                    <a
+                                      href={remoteUrlFor(svc)!}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title="Open from outside the office (company email login)"
+                                      className="text-[#4edea3] text-[10px] hover:underline block"
+                                    >
+                                      🌐 {remoteUrlFor(svc)!.replace("https://", "")}
+                                    </a>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
