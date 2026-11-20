@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getServices } from "@/lib/services-cache";
 import { probeService } from "@/lib/probe";
 import { WARNING_LATENCY_THRESHOLD_MS } from "@/types/service";
 
@@ -75,7 +75,7 @@ function lastOfLeadingRun<T>(items: T[], pred: (t: T) => boolean): T | undefined
 }
 
 async function loadHistory() {
-  const services = await prisma.service.findMany({ where: { enabled: true } });
+  const services = (await getServices()).filter((s) => s.enabled);
   return services.map((service) => ({ service, samples: history.get(service.id) ?? [] }));
 }
 
@@ -118,7 +118,7 @@ const key = (a: ActiveAlert) => `${a.serviceId}:${a.kind}`;
 /** Probe every enabled service, keep a sample each in memory, and notify on alert state changes. */
 export async function runAlerts({ summary = false } = {}) {
   const runStart = new Date();
-  const enabled = await prisma.service.findMany({ where: { enabled: true } });
+  const enabled = (await getServices()).filter((s) => s.enabled);
   const probes = await Promise.all(enabled.map((s) => probeService(s)));
   const checkedAt = new Date();
   enabled.forEach((s, i) => {

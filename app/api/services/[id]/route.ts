@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { invalidateServices } from "@/lib/services-cache";
 import {
   toServiceView,
   CATEGORY_ENUM,
@@ -118,6 +119,7 @@ export async function PATCH(
     include: { tags: true },
   });
 
+  invalidateServices();
   return Response.json(toServiceView(service));
 }
 
@@ -133,5 +135,6 @@ export async function DELETE(
   }
 
   await prisma.service.delete({ where: { id } });
+  invalidateServices();
   return Response.json({ ok: true });
 }

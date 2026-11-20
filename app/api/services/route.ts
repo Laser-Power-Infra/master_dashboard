@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getServices, invalidateServices } from "@/lib/services-cache";
 import {
   toServiceView,
   CATEGORY_ENUM,
@@ -8,10 +9,8 @@ import { parsePublicUrl } from "@/types/service";
 import { normalizeRepoUrl } from "@/lib/repo-url";
 
 export async function GET() {
-  const services = await prisma.service.findMany({
-    orderBy: { createdAt: "asc" },
-    include: { tags: true },
-  });
+  invalidateServices(); // page load / refresh always reads the DB; only the background polls reuse the copy
+  const services = await getServices();
   return Response.json(services.map(toServiceView));
 }
 
@@ -87,5 +86,6 @@ export async function POST(request: Request) {
     include: { tags: true },
   });
 
+  invalidateServices();
   return Response.json(toServiceView(service), { status: 201 });
 }

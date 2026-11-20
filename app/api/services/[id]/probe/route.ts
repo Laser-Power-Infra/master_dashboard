@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getServices } from "@/lib/services-cache";
 import { probeService } from "@/lib/probe";
 
 export async function GET(
@@ -7,10 +7,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const service = await prisma.service.findUnique({
-    where: { id },
-    include: { tags: true },
-  });
+  const service = (await getServices()).find((s) => s.id === id);
   if (!service) {
     return Response.json({ error: "Service not found" }, { status: 404 });
   }
