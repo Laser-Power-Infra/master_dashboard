@@ -11,6 +11,7 @@ const OFFICE_SERVER_IP = "192.168.1.190";
 const REMOTE_SUBDOMAIN_BY_PORT: Record<number, string> = {
   7777: "portal",
   3126: "tender-exec",
+  3995: "exim",
   4173: "enquiry",
   4555: "bom",
   4570: "gmd-quotation",
